@@ -4,11 +4,12 @@ import argparse
 import tools.ClassFunctions as ClassFunctions
 import importlib
 import re
+import os
 
 if __name__ == "__main__" :
 
-    parser = argparse.ArgumentParser(prog='AIPractice')
-    subparsers = parser.add_subparsers(help='commands help')
+    parser = argparse.ArgumentParser(prog=os.path.splitext(os.path.basename(__file__))[0])
+    subparsers = parser.add_subparsers(help='commands info')
 
     for file in ClassFunctions.getPluginFiles("Plugins"):
         if file == "__init__.py":

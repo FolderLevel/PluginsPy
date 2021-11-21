@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import argparse
 import tools.ClassFunctions as ClassFunctions
 import importlib
@@ -5,13 +7,13 @@ import re
 
 if __name__ == "__main__" :
 
-    parser = argparse.ArgumentParser(prog='LogTools')
+    parser = argparse.ArgumentParser(prog='AIPractice')
     subparsers = parser.add_subparsers(help='commands help')
 
     for file in ClassFunctions.getPluginFiles("Plugins"):
         if file == "__init__.py":
             continue
-        
+
         """
         1. 使用文件名获取模块名，
         2. 导入模块，

@@ -22,3 +22,6 @@ class PluginExample:
     #     print(kwargs)
     #     clazz(kwargs)
     #     print("<<< end plugin run method")
+
+if __name__ == "__main__" :
+    PluginExample({"id": "123456", "name": "zengjf"})

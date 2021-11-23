@@ -1,10 +1,10 @@
 # README
 
-尝试学习AI，假装能学会
+以Plugin的形式集成命令行脚本，便于脚本的集中管理
 
 ## 命令集合
 
-`python3 AIPractice.py -h`
+`python3 PluginsPy.py -h`
 
 ## docs
 

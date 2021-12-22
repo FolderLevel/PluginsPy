@@ -34,7 +34,19 @@ def addRun(clazz):
 
         print(">>> enter plugin run method")
         # print("cmd line args: " + str(kwargs))
-        clazz(kwargs)
+        if len(inspect.signature(getattr(clazz, "__init__")).parameters) == 2: 
+            obj = clazz(kwargs)
+        else:
+            obj = clazz()
+
+        invert_op = getattr(obj, "start", None)
+        if callable(invert_op):
+            print(">>> enter plugin start method")
+            if len(inspect.signature(invert_op).parameters) > 0:
+                invert_op(kwargs)
+            else:
+                invert_op()
+            print("<<< end plugin start method")
         print("<<< end plugin run method")
 
     # print(">>> start add plugin run method")

@@ -3,7 +3,7 @@
 import argparse
 import importlib
 import re
-import os
+import sys
 import inspect
 from os import walk
 
@@ -66,14 +66,36 @@ def addRun(clazz):
 
     return clazz
 
-def PluginsPy(cmd) :
+def PluginsPy(cmd, SkipedPlugins=[]) :
 
-    parser = argparse.ArgumentParser(prog=os.path.splitext(os.path.basename(cmd))[0])
-    subparsers = parser.add_subparsers(help='commands info')
+    parser = argparse.ArgumentParser(prog=cmd)
+    subparsers = parser.add_subparsers(help='commands help')
 
+    # tensorflow加载太慢，有需要的情况下通过-s参数判定加载
+    argv = sys.argv[1:]
+    skipOption = True
+    if "-s" in argv and len(argv) >= 1 and argv[0] == "-s":
+        if len(argv) == 1:
+            argv = []
+        elif len(argv) > 1:
+            argv = argv[1:]
+
+        skipOption = False
+
+    # 处理插件
     for file in getPluginFiles("Plugins"):
         if file == "__init__.py":
             continue
+
+        # skip config: Plugins/__init__.py
+        if skipOption:
+            skipedPlugin = False
+            for plugin in SkipedPlugins:
+                if file == plugin or file.split(".")[0] == plugin:
+                    skipedPlugin = True
+            if skipedPlugin:
+                print("skiped pulgin: " + file)
+                continue
 
         """
         1. 使用文件名获取模块名，
@@ -113,7 +135,7 @@ def PluginsPy(cmd) :
         parser_item.set_defaults(func=method)
 
     #执行函数功能
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     if args :
         if len(args.__dict__) > 0:
             print(">>> start call Plugin run or CmdMaps method")

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-import tools.ClassFunctions as ClassFunctions
+import PluginsPy as PluginsPy
 
-@ClassFunctions.addRun
+@PluginsPy.addRun
 class PluginExample:
     """
     PluginExample类是一个编写LogTools插件的示例

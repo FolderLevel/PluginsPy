@@ -66,7 +66,7 @@ def addRun(clazz):
 
     return clazz
 
-def PluginsPy(cmd, SkipedPlugins=[]) :
+def PluginsPy(cmd, skipedPlugins=[], pluginsDir="Plugins") :
 
     parser = argparse.ArgumentParser(prog=cmd)
     subparsers = parser.add_subparsers(help='commands help')
@@ -83,14 +83,14 @@ def PluginsPy(cmd, SkipedPlugins=[]) :
         skipOption = False
 
     # 处理插件
-    for file in getPluginFiles("Plugins"):
+    for file in getPluginFiles(pluginsDir):
         if file == "__init__.py":
             continue
 
         # skip config: Plugins/__init__.py
         if skipOption:
             skipedPlugin = False
-            for plugin in SkipedPlugins:
+            for plugin in skipedPlugins:
                 if file == plugin or file.split(".")[0] == plugin:
                     skipedPlugin = True
             if skipedPlugin:
@@ -104,7 +104,8 @@ def PluginsPy(cmd, SkipedPlugins=[]) :
         4. 获取类方法
         """
         moduleString = file.split(".")[0]
-        module = importlib.import_module("Plugins." + moduleString)
+        print(moduleString)
+        module = importlib.import_module(pluginsDir + "." + moduleString)
         clazz = getattr(module, moduleString)
 
         clazzDoc = clazz.__doc__

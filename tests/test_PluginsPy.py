@@ -7,4 +7,5 @@ import unittest
 from PluginsPy import PluginsPy
 
 if __name__ == '__main__':
-    PluginsPy(__file__)
+    # PluginsPy(__file__, skipedPlugins=["PluginExample"], pluginsDir="Plugins")
+    PluginsPy(__file__, pluginsDir="Plugins")

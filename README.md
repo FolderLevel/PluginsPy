@@ -2,7 +2,7 @@
 
 以Plugin的形式集成命令行脚本，便于脚本的集中管理
 
-**所有的插件放在项目Plugins目录才能被检查到**
+**所有的插件放在项目Plugins目录，或者指定插件目录，才能被检查到**
 
 ## 二、使用示例
 
@@ -43,7 +43,24 @@ if __name__ == '__main__':
     PluginsPy(__file__)
 ```
 
-## 三、dist
+## 示例输出
+
+test_PluginsPy.py PluginExample
+
+```
+>>> start call Plugin run or CmdMaps method
+>>> enter plugin run method
+实例输出：id: 123456, name: zengjf
+>>> enter plugin start method
+>>> in plugin start method
+{'id': '123456', 'name': 'zengjf', 'func': <bound method addRun.<locals>.run of <class 'Plugins.PluginExample.PluginExample'>>}
+<<< out plugin start method
+<<< end plugin start method
+<<< end plugin run method
+<<< end call Plugin run or CmdMaps method
+```
+
+## 四、dist
 
 * pip3 install twine
 * https://pypi.org/

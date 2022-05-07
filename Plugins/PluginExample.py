@@ -19,11 +19,15 @@ class PluginExample:
 
     # @classmethod
     # def run(clazz, kwargs):
-
     #     print(">>> enter plugin run method")
     #     print(kwargs)
     #     clazz(kwargs)
     #     print("<<< end plugin run method")
+
+    def start(self, kwargs):
+        print(">>> in plugin start method")
+        print(kwargs)
+        print("<<< out plugin start method")
 
 if __name__ == "__main__" :
     PluginExample({"id": "123456", "name": "zengjf"})

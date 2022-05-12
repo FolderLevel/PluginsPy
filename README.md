@@ -4,9 +4,13 @@
 
 **所有的插件放在项目Plugins目录，或者指定插件目录，才能被检查到**
 
-## 二、使用示例
+## 二、安装
 
-### 2.1 插件自动生成run方法
+`pip3 install PluginsPy`
+
+## 三、使用示例
+
+### 3.1 插件自动生成run方法
 
 使用Decorator添加run()方法
 
@@ -17,7 +21,7 @@ import PluginsPy as PluginsPy
 class PluginExample:
 ```
 
-### 2.2 插件参数声明
+### 3.2 插件参数声明
 
 * 第一行是类说明，在帮助中显示
 * @开头并且以:分开的是参数及其说明
@@ -34,7 +38,7 @@ class PluginExample:
     """
 ```
 
-### 2.3 插件使用
+### 3.3 插件使用
 
 ```python
 from PluginsPy import PluginsPy
@@ -43,7 +47,7 @@ if __name__ == '__main__':
     PluginsPy(__file__)
 ```
 
-## 示例输出
+## 四、示例输出
 
 test_PluginsPy.py PluginExample
 
@@ -60,7 +64,7 @@ test_PluginsPy.py PluginExample
 <<< end call Plugin run or CmdMaps method
 ```
 
-## 四、dist
+## 五、发行PyPi处理流程
 
 * pip3 install twine
 * https://pypi.org/

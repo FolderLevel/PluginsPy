@@ -12,11 +12,16 @@ class PluginExample:
     """
 
     def __init__(self, kwargs):
+        print(">>> in plugin init method")
+
         self.id = kwargs["id"]
         self.name = kwargs["name"]
 
         print("实例输出：id: " + kwargs["id"] + ", name: " + kwargs["name"])
 
+        print("<<< out plugin init method")
+
+    # 装饰@PluginsPy.addRun自动添加run方法参考
     # @classmethod
     # def run(clazz, kwargs):
     #     print(">>> enter plugin run method")

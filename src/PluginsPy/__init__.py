@@ -104,7 +104,6 @@ def PluginsPy(cmd, skipedPlugins=[], pluginsDir="Plugins") :
         4. 获取类方法
         """
         moduleString = file.split(".")[0]
-        print(moduleString)
         module = importlib.import_module(pluginsDir + "." + moduleString)
         clazz = getattr(module, moduleString)
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import curses
 import importlib
 import re
 import sys
@@ -66,6 +67,157 @@ def addRun(clazz):
 
     return clazz
 
+def _drawPlugins(mainScreen, plugins, topIndex, index, pluginsMaxLen, maxRows, maxCols, color):
+    row  = 1
+
+    # 上下两个边框占用2行
+    if (maxRows - 2) > len(plugins):
+        for plugin in plugins:
+            # 行从1开始绘图，index是从0开始算的
+            if ((row - 1) == index):
+                mainScreen.addstr(row, maxCols // 2 - pluginsMaxLen // 2, plugin, curses.color_pair(color))
+            else:
+                mainScreen.addstr(row, maxCols // 2 - pluginsMaxLen // 2, plugin)
+
+            row += 1
+    else:
+        # 上下两个边框占用2行
+        for plugin in plugins[topIndex:topIndex + (maxRows - 2)]:
+            # 行从1开始绘图，index是从0开始算的
+            if (row - 1) == (index - topIndex):
+                mainScreen.addstr(row, maxCols // 2 - pluginsMaxLen // 2, plugin, curses.color_pair(color))
+            else:
+                mainScreen.addstr(row, maxCols // 2 - pluginsMaxLen // 2, plugin)
+
+            row += 1
+
+    # 刷新界面
+    mainScreen.refresh()
+
+def _showPlugins(plugins, helpList):
+
+    # keyboard code
+    KEY_BOARD_ENTER = 10
+    KEY_BOARD_ESC = 27
+    KEY_BOARD_UP = 259
+    KEY_BOARD_DOWN = 258
+    KEY_BOARD_J = 106
+    KEY_BOARD_K = 107
+    KEY_BOARD_Q = 113
+    KEY_BOARD_H = 104
+
+    # 初始化一个窗口
+    mainScreen = curses.initscr()
+    # 绘制边框
+    mainScreen.border(0)
+    # 使用curses通常要关闭屏幕回显，目的是读取字符仅在适当的环境下输出
+    curses.noecho()
+    # 应用程序一般是立即响应的，即不需要按回车就立即回应的，这种模式叫cbreak模式，相反的常用的模式是缓冲输入模式
+    curses.cbreak()
+    # 终端经常返回特殊键作为一个多字节的转义序列，比如光标键，或者导航键比如Page UP和Home键。
+    # curses可以针对这些序列做一次处理，比如curses.KEY_LEFT返回一个特殊的值。要完成这些工作，必须开启键盘模式。
+    mainScreen.keypad(1)
+    # 不显示光标
+    curses.curs_set(0) 
+
+    # color
+    curses.start_color()
+    curses.use_default_colors()
+    curses.init_pair(1, curses.COLOR_WHITE, -1)
+    curses.init_pair(2, curses.COLOR_GREEN, -1)
+    DEFAULT_COLOR = 1
+    FG_GREEN_COLOR = 2
+    
+    # 获取当前行列信息
+    maxRows = curses.LINES
+    maxCols = curses.COLS
+    MIN_ROWS = 5
+    if (maxRows < MIN_ROWS):
+        print("terminal rows must more than " + str(MIN_ROWS))
+        exit(0)
+
+    pluginsMaxLen = 0
+    for plugin in plugins:
+        if len(plugin) > pluginsMaxLen:
+            pluginsMaxLen = len(plugin)
+    
+
+    # 当前选择的目标程序
+    index = 0
+    # 终端可显示的程序列表第一个程序，因为存在列表显示不全，只能显示部分程序列表的问题
+    topIndex = 0
+    # 进入Help模式
+    inHelpStatus = False
+
+    _drawPlugins(mainScreen, plugins, topIndex, index, pluginsMaxLen, maxRows, maxCols, FG_GREEN_COLOR)
+    
+    while True:
+        # 等待按键事件
+        ch = mainScreen.getch()
+    
+        if ch == curses.KEY_RESIZE or inHelpStatus:
+            mainScreen.clear()
+            mainScreen.border(0)
+            maxRows, maxCols = mainScreen.getmaxyx()
+    
+            _drawPlugins(mainScreen, plugins, topIndex, index, pluginsMaxLen, maxRows, maxCols, FG_GREEN_COLOR)
+
+            inHelpStatus = False
+        # show help
+        elif ch == KEY_BOARD_H:
+            inHelpStatus = True
+
+            # Define windows to be used for bar charts
+            # curses.newwin(height, width, begin_y, begin_x)
+            helpScreen = curses.newwin(
+                    3,                              # 上下边框 + 内容
+                    (maxCols - 4),                  # 左右边框 + 左右空列
+                    (maxRows - 2 - 2 + 1) // 2,     # 主屏上下边框 + 帮助屏上下边框 + 取整补充1
+                    2                               # 主屏左边框 + 左空列
+                )
+            helpScreen.clear()
+            helpScreen.addstr(1, 1, helpList[index][0:maxCols - (4 + 2)])
+            helpScreen.border(0)
+            helpScreen.refresh()
+        # 退出按键
+        elif ch == KEY_BOARD_ESC or ch == KEY_BOARD_Q:
+            index = -1
+            break
+        elif ch == KEY_BOARD_UP or ch == KEY_BOARD_K:
+            index -= 1
+            if index <= 0:
+                index = 0
+
+            # 处理上边缘
+            if topIndex == (index + 1):
+                topIndex -= 1
+
+            mainScreen.clear()
+            mainScreen.border(0)
+            _drawPlugins(mainScreen, plugins, topIndex, index, pluginsMaxLen, maxRows, maxCols, FG_GREEN_COLOR)
+        elif ch == KEY_BOARD_DOWN or ch == KEY_BOARD_J:
+            index += 1
+            if index >= len(plugins):
+                index = len(plugins) - 1
+            else:
+                # 处理下边缘
+                # 上下两个边框占用2行
+                if (topIndex + (maxRows - 2)) == index :
+                    topIndex += 1
+
+            mainScreen.clear()
+            mainScreen.border(0)
+            _drawPlugins(mainScreen, plugins, topIndex, index, pluginsMaxLen, maxRows, maxCols, FG_GREEN_COLOR)
+        elif ch == KEY_BOARD_ENTER:
+            break
+        else:
+            pass
+    
+    # 退出curses环境
+    curses.endwin()
+
+    return index
+
 def PluginsPy(cmd, skipedPlugins=[], pluginsDir="Plugins") :
 
     parser = argparse.ArgumentParser(prog=cmd)
@@ -83,19 +235,16 @@ def PluginsPy(cmd, skipedPlugins=[], pluginsDir="Plugins") :
         skipOption = False
 
     # 处理插件
+    pluginsList = []
+    helpList = []
     for file in getPluginFiles(pluginsDir):
         if file == "__init__.py":
             continue
 
         # skip config: Plugins/__init__.py
-        if skipOption:
-            skipedPlugin = False
-            for plugin in skipedPlugins:
-                if file == plugin or file.split(".")[0] == plugin:
-                    skipedPlugin = True
-            if skipedPlugin:
-                print("skiped pulgin: " + file)
-                continue
+        if skipOption and (file.split(".")[0] in skipedPlugins):
+            print("skiped pulgin: " + file)
+            continue
 
         """
         1. 使用文件名获取模块名，
@@ -110,6 +259,7 @@ def PluginsPy(cmd, skipedPlugins=[], pluginsDir="Plugins") :
         clazzDoc = clazz.__doc__
         # 从类注释中获取类说明，也就是帮助
         parser_item = subparsers.add_parser(moduleString, help = clazzDoc.split("@")[0].strip())
+        helpList.append(clazzDoc.split("@")[0].strip())
 
         # 从类注释中获取类参数及参数说明，格式@argument: argument doc
         keyValues = {}
@@ -133,6 +283,16 @@ def PluginsPy(cmd, skipedPlugins=[], pluginsDir="Plugins") :
         # 获取当前处理方法并设置为该命令的回调函数
         method = getattr(clazz, "run")
         parser_item.set_defaults(func=method)
+
+        pluginsList.append(moduleString)
+    
+    if len(argv) == 0:
+        index = _showPlugins(pluginsList, helpList)
+        if index >= 0:
+            print(pluginsList[index])
+            argv.append(pluginsList[index])
+        elif index == -1:
+            exit(0)
 
     #执行函数功能
     args = parser.parse_args(argv)

@@ -6,7 +6,12 @@
 
 ## 二、安装
 
-`pip3 install PluginsPy`
+* pypi
+  * `pip3 install PluginsPy`
+* 手动安装
+  * `pip3 uninstall PluginsPy`
+  * `pip3 install PluginsPy-0.0.5-py3-none-any.whl --force-reinstall`
+  * `python3 -m pip show PluginsPy`
 
 ## 三、使用示例
 

@@ -7,6 +7,7 @@ import re
 import sys
 import inspect
 from os import walk
+import unicodedata
 
 def getFiles(path) :
     for (dirpath, dirnames, filenames) in walk(path) :
@@ -66,6 +67,17 @@ def addRun(clazz):
     # print("<<< end add plugin run method")
 
     return clazz
+
+def _strWidth(chs):
+    
+    chLength = 0
+    for ch in chs:
+        if (unicodedata.east_asian_width(ch) in ('F','W','A')):
+            chLength += 2
+        else:
+            chLength += 1
+    
+    return chLength
 
 def _drawPlugins(mainScreen, plugins, topIndex, index, pluginsMaxLen, maxRows, maxCols, color):
     row  = 1
@@ -133,6 +145,7 @@ def _showPlugins(plugins, helpList):
     maxCols = curses.COLS
     MIN_ROWS = 5
     if (maxRows < MIN_ROWS):
+        curses.endwin()
         print("terminal rows must more than " + str(MIN_ROWS))
         exit(0)
 
@@ -150,6 +163,15 @@ def _showPlugins(plugins, helpList):
     inHelpStatus = False
 
     _drawPlugins(mainScreen, plugins, topIndex, index, pluginsMaxLen, maxRows, maxCols, FG_GREEN_COLOR)
+
+    # Define windows to be used for bar charts
+    # curses.newwin(height, width, begin_y, begin_x)
+    helpScreen = curses.newwin(
+            3,                              # 上下边框 + 内容
+            (maxCols - 4),                  # 左右边框 + 左右空列
+            (maxRows - 2 - 2 + 1) // 2,     # 主屏上下边框 + 帮助屏上下边框 + 取整补充1
+            2                               # 主屏左边框 + 左空列
+        )
     
     while True:
         # 等待按键事件
@@ -159,6 +181,16 @@ def _showPlugins(plugins, helpList):
             mainScreen.clear()
             mainScreen.border(0)
             maxRows, maxCols = mainScreen.getmaxyx()
+
+            helpScreen.resize(
+                    3,              # 上下边框 + 内容
+                    maxCols - 4     # 左右边框 + 左右空列
+                )
+
+            if maxRows < MIN_ROWS:
+                curses.endwin()
+                print("terminal rows must more than " + str(MIN_ROWS))
+                exit(0)
     
             _drawPlugins(mainScreen, plugins, topIndex, index, pluginsMaxLen, maxRows, maxCols, FG_GREEN_COLOR)
 
@@ -167,16 +199,18 @@ def _showPlugins(plugins, helpList):
         elif ch == KEY_BOARD_H:
             inHelpStatus = True
 
-            # Define windows to be used for bar charts
-            # curses.newwin(height, width, begin_y, begin_x)
-            helpScreen = curses.newwin(
-                    3,                              # 上下边框 + 内容
-                    (maxCols - 4),                  # 左右边框 + 左右空列
+            helpScreen.mvwin(
                     (maxRows - 2 - 2 + 1) // 2,     # 主屏上下边框 + 帮助屏上下边框 + 取整补充1
                     2                               # 主屏左边框 + 左空列
                 )
             helpScreen.clear()
-            helpScreen.addstr(1, 1, helpList[index][0:maxCols - (4 + 2)])
+            # 主屏左右边框 + 左右空列 + 帮助屏左右边框
+            helpScreenWidth = maxCols - 4 - 2
+            if helpScreenWidth > _strWidth(helpList[index]):
+                helpScreen.addstr(1, (helpScreenWidth) // 2 - _strWidth(helpList[index]) // 2, helpList[index])
+            else:
+                # 可显示字符区域小于字符串实际宽度，只截取一半显示，以后有需求，把这里改成加上三个点表示省略部分
+                helpScreen.addstr(1, 1, helpList[index][0:(helpScreenWidth // 2)])
             helpScreen.border(0)
             helpScreen.refresh()
         # 退出按键
@@ -258,8 +292,9 @@ def PluginsPy(cmd, skipedPlugins=[], pluginsDir="Plugins") :
 
         clazzDoc = clazz.__doc__
         # 从类注释中获取类说明，也就是帮助
-        parser_item = subparsers.add_parser(moduleString, help = clazzDoc.split("@")[0].strip())
-        helpList.append(clazzDoc.split("@")[0].strip())
+        helpStr = clazzDoc.split("@")[0].strip().replace('\r', '').replace('\n', '').replace(' ', '').replace('\t', '')
+        parser_item = subparsers.add_parser(moduleString, help = helpStr)
+        helpList.append(helpStr)
 
         # 从类注释中获取类参数及参数说明，格式@argument: argument doc
         keyValues = {}
@@ -289,7 +324,7 @@ def PluginsPy(cmd, skipedPlugins=[], pluginsDir="Plugins") :
     if len(argv) == 0:
         index = _showPlugins(pluginsList, helpList)
         if index >= 0:
-            print(pluginsList[index])
+            print("selected plugin: " + pluginsList[index])
             argv.append(pluginsList[index])
         elif index == -1:
             exit(0)

@@ -117,6 +117,7 @@ def _showPlugins(plugins, helpList):
     KEY_BOARD_K = 107
     KEY_BOARD_Q = 113
     KEY_BOARD_H = 104
+    KEY_BOARD_Search = 47
 
     # 初始化一个窗口
     mainScreen = curses.initscr()
@@ -161,6 +162,8 @@ def _showPlugins(plugins, helpList):
     topIndex = 0
     # 进入Help模式
     inHelpStatus = False
+    # Search模式
+    inSearchMode = False
 
     _drawPlugins(mainScreen, plugins, topIndex, index, pluginsMaxLen, maxRows, maxCols, FG_GREEN_COLOR)
 
@@ -172,78 +175,101 @@ def _showPlugins(plugins, helpList):
             (maxRows - 2 - 2 + 1) // 2,     # 主屏上下边框 + 帮助屏上下边框 + 取整补充1
             2                               # 主屏左边框 + 左空列
         )
-    
+
     while True:
         # 等待按键事件
         ch = mainScreen.getch()
-    
-        if ch == curses.KEY_RESIZE or inHelpStatus:
-            mainScreen.clear()
-            mainScreen.border(0)
-            maxRows, maxCols = mainScreen.getmaxyx()
 
-            helpScreen.resize(
-                    3,              # 上下边框 + 内容
-                    maxCols - 4     # 左右边框 + 左右空列
-                )
+        if not inSearchMode:
+            if ch == curses.KEY_RESIZE or inHelpStatus:
+                mainScreen.clear()
+                mainScreen.border(0)
+                maxRows, maxCols = mainScreen.getmaxyx()
 
-            if maxRows < MIN_ROWS:
-                curses.endwin()
-                print("terminal rows must more than " + str(MIN_ROWS))
-                exit(0)
-    
-            _drawPlugins(mainScreen, plugins, topIndex, index, pluginsMaxLen, maxRows, maxCols, FG_GREEN_COLOR)
+                helpScreen.resize(
+                        3,              # 上下边框 + 内容
+                        maxCols - 4     # 左右边框 + 左右空列
+                    )
 
-            inHelpStatus = False
-        # show help
-        elif ch == KEY_BOARD_H:
-            inHelpStatus = True
+                if maxRows < MIN_ROWS:
+                    curses.endwin()
+                    print("terminal rows must more than " + str(MIN_ROWS))
+                    exit(0)
 
-            helpScreen.mvwin(
-                    (maxRows - 2 - 2 + 1) // 2,     # 主屏上下边框 + 帮助屏上下边框 + 取整补充1
-                    2                               # 主屏左边框 + 左空列
-                )
-            helpScreen.clear()
-            # 主屏左右边框 + 左右空列 + 帮助屏左右边框
-            helpScreenWidth = maxCols - 4 - 2
-            if helpScreenWidth > _strWidth(helpList[index]):
-                helpScreen.addstr(1, (helpScreenWidth) // 2 - _strWidth(helpList[index]) // 2, helpList[index])
+                _drawPlugins(mainScreen, plugins, topIndex, index, pluginsMaxLen, maxRows, maxCols, FG_GREEN_COLOR)
+
+                inHelpStatus = False
+            # show help
+            elif ch == KEY_BOARD_H:
+                inHelpStatus = True
+
+                helpScreen.mvwin(
+                        (maxRows - 2 - 2 + 1) // 2,     # 主屏上下边框 + 帮助屏上下边框 + 取整补充1
+                        2                               # 主屏左边框 + 左空列
+                    )
+                helpScreen.clear()
+                # 主屏左右边框 + 左右空列 + 帮助屏左右边框
+                helpScreenWidth = maxCols - 4 - 2
+                if helpScreenWidth > _strWidth(helpList[index]):
+                    helpScreen.addstr(1, (helpScreenWidth) // 2 - _strWidth(helpList[index]) // 2, helpList[index])
+                else:
+                    # 可显示字符区域小于字符串实际宽度，只截取一半显示，以后有需求，把这里改成加上三个点表示省略部分
+                    helpScreen.addstr(1, 1, helpList[index][0:(helpScreenWidth // 2)])
+                helpScreen.border(0)
+                helpScreen.refresh()
+            # 退出按键
+            elif ch == KEY_BOARD_ESC or ch == KEY_BOARD_Q:
+                index = -1
+                break
+            elif ch == KEY_BOARD_UP or ch == KEY_BOARD_K:
+                index -= 1
+                if index <= 0:
+                    index = 0
+
+                # 处理上边缘
+                if topIndex == (index + 1):
+                    topIndex -= 1
+
+                mainScreen.clear()
+                mainScreen.border(0)
+                _drawPlugins(mainScreen, plugins, topIndex, index, pluginsMaxLen, maxRows, maxCols, FG_GREEN_COLOR)
+            elif ch == KEY_BOARD_DOWN or ch == KEY_BOARD_J:
+                index += 1
+                if index >= len(plugins):
+                    index = len(plugins) - 1
+                else:
+                    # 处理下边缘
+                    # 上下两个边框占用2行
+                    if (topIndex + (maxRows - 2)) == index :
+                        topIndex += 1
+
+                mainScreen.clear()
+                mainScreen.border(0)
+                _drawPlugins(mainScreen, plugins, topIndex, index, pluginsMaxLen, maxRows, maxCols, FG_GREEN_COLOR)
+            elif ch == KEY_BOARD_ENTER:
+                break
+            elif ch == KEY_BOARD_Search:
+                inSearchMode = True
+
+                mainScreen.attron(curses.color_pair(FG_GREEN_COLOR))
+                mainScreen.border(0)
+                mainScreen.refresh()
+                mainScreen.attroff(curses.color_pair(FG_GREEN_COLOR))
             else:
-                # 可显示字符区域小于字符串实际宽度，只截取一半显示，以后有需求，把这里改成加上三个点表示省略部分
-                helpScreen.addstr(1, 1, helpList[index][0:(helpScreenWidth // 2)])
-            helpScreen.border(0)
-            helpScreen.refresh()
-        # 退出按键
-        elif ch == KEY_BOARD_ESC or ch == KEY_BOARD_Q:
-            index = -1
-            break
-        elif ch == KEY_BOARD_UP or ch == KEY_BOARD_K:
-            index -= 1
-            if index <= 0:
-                index = 0
-
-            # 处理上边缘
-            if topIndex == (index + 1):
-                topIndex -= 1
+                pass
+        # 允许使用首字母进行快速定位选择
+        elif (ch >= ord("A") and ch <= ord("z")) or (ch >= ord("0") and (ch <= ord("9"))) and inSearchMode:
+            for i in range(len(plugins)):
+                if plugins[i].lower().startswith(chr(ch).lower()):
+                    index = i
+                    topIndex = index
+                    break
 
             mainScreen.clear()
             mainScreen.border(0)
             _drawPlugins(mainScreen, plugins, topIndex, index, pluginsMaxLen, maxRows, maxCols, FG_GREEN_COLOR)
-        elif ch == KEY_BOARD_DOWN or ch == KEY_BOARD_J:
-            index += 1
-            if index >= len(plugins):
-                index = len(plugins) - 1
-            else:
-                # 处理下边缘
-                # 上下两个边框占用2行
-                if (topIndex + (maxRows - 2)) == index :
-                    topIndex += 1
 
-            mainScreen.clear()
-            mainScreen.border(0)
-            _drawPlugins(mainScreen, plugins, topIndex, index, pluginsMaxLen, maxRows, maxCols, FG_GREEN_COLOR)
-        elif ch == KEY_BOARD_ENTER:
-            break
+            inSearchMode = False
         else:
             pass
     

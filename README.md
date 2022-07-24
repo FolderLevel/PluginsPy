@@ -69,7 +69,14 @@ test_PluginsPy.py PluginExample
 <<< end call Plugin run or CmdMaps method
 ```
 
-## 五、发行PyPi处理流程
+## 五、快捷键
+
+* j：选择上一个
+* k：选择下一个
+* /：进入首字母快速选择模式，边框会变成绿色
+  * a-z，0-9：跳转到首字母为该字符的插件位置，便于快速选择，目前支持一个字符
+
+## 六、发行PyPi处理流程
 
 * pip3 install twine
 * https://pypi.org/

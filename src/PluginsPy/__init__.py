@@ -322,6 +322,9 @@ def PluginsPy(cmd, skipedPlugins=[], pluginsDir="Plugins") :
         pluginsList.append(moduleString)
     
     if len(argv) == 0:
+        # 按字符串排序一下，方便根据查找选择插件
+        pluginsList.sort()
+
         index = _showPlugins(pluginsList, helpList)
         if index >= 0:
             print("selected plugin: " + pluginsList[index])

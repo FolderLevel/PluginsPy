@@ -118,6 +118,7 @@ def _showPlugins(plugins, helpList):
     KEY_BOARD_Q = 113
     KEY_BOARD_H = 104
     KEY_BOARD_Search = 47
+    KEY_BOARD_BACKSPACE = 127
 
     # 初始化一个窗口
     mainScreen = curses.initscr()
@@ -164,6 +165,8 @@ def _showPlugins(plugins, helpList):
     inHelpStatus = False
     # Search模式
     inSearchMode = False
+    # 输入字符串
+    inputString = ""
 
     _drawPlugins(mainScreen, plugins, topIndex, index, pluginsMaxLen, maxRows, maxCols, FG_GREEN_COLOR)
 
@@ -180,27 +183,32 @@ def _showPlugins(plugins, helpList):
         # 等待按键事件
         ch = mainScreen.getch()
 
+        if ch == curses.KEY_RESIZE or inHelpStatus:
+            mainScreen.clear()
+            mainScreen.border(0)
+            maxRows, maxCols = mainScreen.getmaxyx()
+
+            helpScreen.resize(
+                    3,              # 上下边框 + 内容
+                    maxCols - 4     # 左右边框 + 左右空列
+                )
+
+            if maxRows < MIN_ROWS:
+                curses.endwin()
+                print("terminal rows must more than " + str(MIN_ROWS))
+                exit(0)
+
+            _drawPlugins(mainScreen, plugins, topIndex, index, pluginsMaxLen, maxRows, maxCols, FG_GREEN_COLOR)
+
+            inHelpStatus = False
+            inSearchMode = False
+            inputString = ""
+
+            continue
+
         if not inSearchMode:
-            if ch == curses.KEY_RESIZE or inHelpStatus:
-                mainScreen.clear()
-                mainScreen.border(0)
-                maxRows, maxCols = mainScreen.getmaxyx()
-
-                helpScreen.resize(
-                        3,              # 上下边框 + 内容
-                        maxCols - 4     # 左右边框 + 左右空列
-                    )
-
-                if maxRows < MIN_ROWS:
-                    curses.endwin()
-                    print("terminal rows must more than " + str(MIN_ROWS))
-                    exit(0)
-
-                _drawPlugins(mainScreen, plugins, topIndex, index, pluginsMaxLen, maxRows, maxCols, FG_GREEN_COLOR)
-
-                inHelpStatus = False
             # show help
-            elif ch == KEY_BOARD_H:
+            if ch == KEY_BOARD_H:
                 inHelpStatus = True
 
                 helpScreen.mvwin(
@@ -249,29 +257,62 @@ def _showPlugins(plugins, helpList):
             elif ch == KEY_BOARD_ENTER:
                 break
             elif ch == KEY_BOARD_Search:
+                # 进入检索模式
                 inSearchMode = True
 
-                mainScreen.attron(curses.color_pair(FG_GREEN_COLOR))
-                mainScreen.border(0)
-                mainScreen.refresh()
-                mainScreen.attroff(curses.color_pair(FG_GREEN_COLOR))
+                # 移动一下窗口
+                helpScreen.mvwin(
+                        (maxRows - 2 - 2 + 1) // 2,     # 主屏上下边框 + 帮助屏上下边框 + 取整补充1
+                        2                               # 主屏左边框 + 左空列
+                    )
+
+                # 开启光标显示
+                curses.curs_set(1) 
+
+                helpScreen.clear()
+                helpScreen.border(0)
+                # 光标一动到中间
+                helpScreen.move(1, (maxCols - 4 - 2) // 2)
+                helpScreen.refresh()
             else:
                 pass
+
         # 允许使用首字母进行快速定位选择
-        elif (ch >= ord("A") and ch <= ord("z")) or (ch >= ord("0") and (ch <= ord("9"))) and inSearchMode:
-            for i in range(len(plugins)):
-                if plugins[i].lower().startswith(chr(ch).lower()):
-                    index = i
-                    topIndex = index
-                    break
-
-            mainScreen.clear()
-            mainScreen.border(0)
-            _drawPlugins(mainScreen, plugins, topIndex, index, pluginsMaxLen, maxRows, maxCols, FG_GREEN_COLOR)
-
-            inSearchMode = False
         else:
-            pass
+            if ((ch >= ord("A") and ch <= ord("z")) or (ch >= ord("0") and (ch <= ord("9"))) or ch == KEY_BOARD_BACKSPACE) and inSearchMode:
+                if ch == KEY_BOARD_BACKSPACE:
+                    if len(inputString) == 0:
+                        continue
+
+                    inputString = inputString[:-1]
+                else:
+                    inputString += chr(ch)
+
+                helpScreen.clear()
+                helpScreen.border(0)
+                helpScreenWidth = maxCols - 4 - 2
+                helpScreen.addstr(1, (helpScreenWidth) // 2 - _strWidth(inputString) // 2, inputString)
+                helpScreen.refresh()
+            elif ch == KEY_BOARD_ENTER:
+                for i in range(len(plugins)):
+                    if plugins[i].lower().startswith(inputString.lower()):
+                        index = i
+                        topIndex = index
+
+                        break
+
+                mainScreen.clear()
+                mainScreen.border(0)
+                _drawPlugins(mainScreen, plugins, topIndex, index, pluginsMaxLen, maxRows, maxCols, FG_GREEN_COLOR)
+
+                # 退出检索模式
+                inSearchMode = False
+                # 清除当前输入字符串缓冲区
+                inputString = ""
+                # 关启光标显示
+                curses.curs_set(0) 
+            else:
+                pass
     
     # 退出curses环境
     curses.endwin()
@@ -295,6 +336,7 @@ def PluginsPy(cmd, skipedPlugins=[], pluginsDir="Plugins") :
         skipOption = False
 
     # 处理插件
+    pluginsDict = {}
     pluginsList = []
     helpList = []
     for file in getPluginFiles(pluginsDir):
@@ -320,7 +362,6 @@ def PluginsPy(cmd, skipedPlugins=[], pluginsDir="Plugins") :
         # 从类注释中获取类说明，也就是帮助
         helpStr = clazzDoc.split("@")[0].strip().replace('\r', '').replace('\n', '').replace(' ', '').replace('\t', '')
         parser_item = subparsers.add_parser(moduleString, help = helpStr)
-        helpList.append(helpStr)
 
         # 从类注释中获取类参数及参数说明，格式@argument: argument doc
         keyValues = {}
@@ -345,11 +386,13 @@ def PluginsPy(cmd, skipedPlugins=[], pluginsDir="Plugins") :
         method = getattr(clazz, "run")
         parser_item.set_defaults(func=method)
 
-        pluginsList.append(moduleString)
+        pluginsDict[moduleString] = helpStr
     
     if len(argv) == 0:
         # 按字符串排序一下，方便根据查找选择插件
-        pluginsList.sort()
+        for plugin in sorted(pluginsDict.keys()):
+            pluginsList.append(plugin)
+            helpList.append(pluginsDict[plugin])
 
         index = _showPlugins(pluginsList, helpList)
         if index >= 0:

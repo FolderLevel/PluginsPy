@@ -259,6 +259,8 @@ def _showPlugins(plugins, helpList):
             elif ch == KEY_BOARD_Search:
                 # 进入检索模式
                 inSearchMode = True
+                # /字符表示进入检索，参考vim
+                inputString += "/"
 
                 # 移动一下窗口
                 helpScreen.mvwin(
@@ -271,15 +273,15 @@ def _showPlugins(plugins, helpList):
 
                 helpScreen.clear()
                 helpScreen.border(0)
-                # 光标一动到中间
-                helpScreen.move(1, (maxCols - 4 - 2) // 2)
+                helpScreenWidth = maxCols - 4 - 2
+                helpScreen.addstr(1, (helpScreenWidth) // 2 - _strWidth(inputString) // 2, inputString)
                 helpScreen.refresh()
             else:
                 pass
 
         # 允许使用首字母进行快速定位选择
         else:
-            if ((ch >= ord("A") and ch <= ord("z")) or (ch >= ord("0") and (ch <= ord("9"))) or ch == KEY_BOARD_BACKSPACE) and inSearchMode:
+            if (ch >= ord("A") and ch <= ord("z")) or (ch >= ord("0") and (ch <= ord("9"))) or ch == KEY_BOARD_BACKSPACE:
                 if ch == KEY_BOARD_BACKSPACE:
                     if len(inputString) == 0:
                         continue
@@ -295,7 +297,8 @@ def _showPlugins(plugins, helpList):
                 helpScreen.refresh()
             elif ch == KEY_BOARD_ENTER:
                 for i in range(len(plugins)):
-                    if plugins[i].lower().startswith(inputString.lower()):
+                    # 忽略第一个字符/，这个字符只是表示在检索模式，参考vim
+                    if plugins[i].lower().startswith(inputString[1:].lower()):
                         index = i
                         topIndex = index
 
@@ -309,7 +312,7 @@ def _showPlugins(plugins, helpList):
                 inSearchMode = False
                 # 清除当前输入字符串缓冲区
                 inputString = ""
-                # 关启光标显示
+                # 关闭光标显示
                 curses.curs_set(0) 
             else:
                 pass

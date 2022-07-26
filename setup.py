@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="PluginsPy",
-    version="0.0.9",
+    version="0.0.10",
     author="zengjf",
     author_email="zengjf42@163.com",
     description="Plugins Framework",

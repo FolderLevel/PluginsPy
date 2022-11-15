@@ -8,6 +8,8 @@ import sys
 import inspect
 from os import walk
 import unicodedata
+import os
+import shutil
 
 def getFiles(path) :
     for (dirpath, dirnames, filenames) in walk(path) :
@@ -413,6 +415,20 @@ def PluginsPy(cmd, skipedPlugins=[], pluginsDir="Plugins") :
             print("<<< end call Plugin run or CmdMaps method")
         else:
             parser.parse_args(["-h"])
+
+def main():
+    exePath = os.path.abspath(__file__)
+    folder = os.path.dirname(exePath)
+    currentFolder = os.getcwd()
+    templateFolder = os.path.join(folder, 'template')
+
+    if len(sys.argv) == 2:
+        if sys.argv[1] == "new":
+            shutil.copytree(templateFolder, currentFolder, dirs_exist_ok=True)
+    else:
+        print("USAGE:")
+        print("   pluginspy new")
+        print("")
 
 if __name__ == "__main__" :
     pass

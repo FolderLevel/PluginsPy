@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
 
-import PluginsPy as PluginsPy
-
-@PluginsPy.addRun
 class Shenzhen:
     """
     Shenzhen类是一个编写LogTools插件的示例

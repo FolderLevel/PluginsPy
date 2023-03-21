@@ -17,31 +17,41 @@
 
 ### 3.1 插件自动生成run方法
 
-使用Decorator添加run()方法
+* `0.0.*`版本，使用Decorator添加run()方法
+  ```python
+  import PluginsPy as PluginsPy
 
-```python
-import PluginsPy as PluginsPy
-
-@PluginsPy.addRun
-class PluginExample:
-```
+  @PluginsPy.addRun
+  class PluginExample:
+  ```
+* `0.1.*`版本不需要以上操作，只需要将类放在插件目录即可，兼容`0.0.*`版本
 
 ### 3.2 插件参数声明
 
 * 第一行是类说明，在帮助中显示
 * @开头并且以:分开的是参数及其说明
 * 之外的是普通说明，可以自行添加，譬如以*号开始列表
+* `0.0.*`版本
+  ```python
+  @PluginsPy.addRun
+  class PluginExample:
+      """
+      PluginExample类是一个编写LogTools插件的示例
 
-```python
-@PluginsPy.addRun
-class PluginExample:
-    """
-    PluginExample类是一个编写LogTools插件的示例
+      @id: 唯一码
+      @name: 唯一码别名
+      """
+  ```
+* `0.1.*`版本
+  ```python
+  class PluginExample:
+      """
+      PluginExample类是一个编写LogTools插件的示例
 
-    @id: 唯一码
-    @name: 唯一码别名
-    """
-```
+      @id: 唯一码
+      @name: 唯一码别名
+      """
+  ```
 
 ### 3.3 插件使用
 

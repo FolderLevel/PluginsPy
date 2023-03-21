@@ -362,6 +362,13 @@ def PluginsPy(cmd, skipedPlugins=[], pluginsDir="Plugins") :
         moduleString = file.split(".")[0]
         module = importlib.import_module(pluginsDir + "." + moduleString)
         clazz = getattr(module, moduleString)
+        allClazzMethods = getClassMethods(clazz)
+        if "run" not in allClazzMethods.keys():
+            print(moduleString + " class add run method dynamically")
+            addRun(clazz)
+
+        # allClazzMethods = getClassMethods(clazz)
+        # print(moduleString + ": " + ", ".join(allClazzMethods.keys()))
 
         clazzDoc = clazz.__doc__
         # 从类注释中获取类说明，也就是帮助
@@ -411,7 +418,12 @@ def PluginsPy(cmd, skipedPlugins=[], pluginsDir="Plugins") :
     if args :
         if len(args.__dict__) > 0:
             print(">>> start call Plugin run or CmdMaps method")
-            args.func(args.__dict__)
+            # delete func in args
+            argsDictTmp = dict(args.__dict__)
+            del argsDictTmp["func"]
+
+            # call run method
+            args.func(argsDictTmp)
             print("<<< end call Plugin run or CmdMaps method")
         else:
             parser.parse_args(["-h"])

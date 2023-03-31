@@ -361,6 +361,12 @@ def PluginsPy(cmd, skipedPlugins=[], pluginsDir="Plugins") :
         """
         moduleString = file.split(".")[0]
         module = importlib.import_module(pluginsDir + "." + moduleString)
+
+        matchObj = re.match(r'\d{4}[_]?', moduleString)
+        if matchObj:
+            moduleString = moduleString.replace(matchObj.group(0), "")
+            print("convert module: " + matchObj.group(0) + moduleString + " -> " + moduleString)
+
         clazz = getattr(module, moduleString)
         allClazzMethods = getClassMethods(clazz)
         if "run" not in allClazzMethods.keys():

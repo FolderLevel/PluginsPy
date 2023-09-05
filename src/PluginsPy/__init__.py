@@ -344,6 +344,7 @@ def PluginsPy(cmd, skipedPlugins=[], pluginsDir="Plugins") :
     pluginsDict = {}
     pluginsList = []
     helpList = []
+    pluginsPrefix = pluginsDir.replace("/", ".").replace("\\", ".")
     for file in getPluginFiles(pluginsDir):
         if file == "__init__.py":
             continue
@@ -360,7 +361,7 @@ def PluginsPy(cmd, skipedPlugins=[], pluginsDir="Plugins") :
         4. 获取类方法
         """
         moduleString = file.split(".")[0]
-        module = importlib.import_module(pluginsDir + "." + moduleString)
+        module = importlib.import_module(pluginsPrefix + "." + moduleString)
 
         matchObj = re.match(r'\d{4}[_]?', moduleString)
         if matchObj:

@@ -24,5 +24,8 @@ setuptools.setup(
     packages=setuptools.find_packages(where="src"),
     python_requires=">=3.0",
     include_package_data=True,
+    install_requires=[
+        "windows-curses;platform_system=='Windows'"
+    ],
     entry_points={"console_scripts": ["pluginspy-build=PluginsPy:main"]},
 )

@@ -231,7 +231,7 @@ def _showPlugins(plugins, helpList):
             elif ch == KEY_BOARD_ESC or ch == KEY_BOARD_Q:
                 index = -1
                 break
-            elif ch == KEY_BOARD_UP or ch == KEY_BOARD_K:
+            elif ch == KEY_BOARD_UP or ch == KEY_BOARD_K or ch == 450:
                 index -= 1
                 if index <= 0:
                     index = 0
@@ -243,7 +243,7 @@ def _showPlugins(plugins, helpList):
                 mainScreen.clear()
                 mainScreen.border(0)
                 _drawPlugins(mainScreen, plugins, topIndex, index, pluginsMaxLen, maxRows, maxCols, FG_GREEN_COLOR)
-            elif ch == KEY_BOARD_DOWN or ch == KEY_BOARD_J:
+            elif ch == KEY_BOARD_DOWN or ch == KEY_BOARD_J or ch == 456:
                 index += 1
                 if index >= len(plugins):
                     index = len(plugins) - 1

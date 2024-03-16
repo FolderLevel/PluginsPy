@@ -435,6 +435,62 @@ def PluginsPy(cmd, skipedPlugins=[], pluginsDir="Plugins") :
         else:
             parser.parse_args(["-h"])
 
+def PluginsPySelect(cmd, pluginsDir="Plugins") :
+
+    # 处理插件
+    pluginsDict = {}
+    pluginsList = []
+    helpList = []
+    pluginsPrefix = pluginsDir.replace("/", ".").replace("\\", ".")
+    for file in getPluginFiles(pluginsDir):
+        if file == "__init__.py":
+            continue
+
+        """
+        1. 使用文件名获取模块名，
+        2. 保存模块文件名。
+        """
+        moduleString = file.split(".")[0]
+        matchObj = re.match(r'\d{4}[_]?', moduleString)
+        if matchObj:
+            moduleString = moduleString.replace(matchObj.group(0), "")
+            print("convert module: " + matchObj.group(0) + moduleString + " -> " + moduleString)
+
+        pluginsDict[moduleString] = file
+
+    # 按字符串排序一下，方便根据查找选择插件
+    for plugin in sorted(pluginsDict.keys()):
+        pluginsList.append(plugin)
+        helpList.append(pluginsDict[plugin])
+
+    index = _showPlugins(pluginsList, helpList)
+    if index >= 0:
+        print("selected plugin: " + pluginsList[index])
+    elif index == -1:
+        exit(0)
+
+    # print(pluginsPrefix + "." + helpList[index].split(".")[0])
+    module = importlib.import_module(pluginsPrefix + "." + helpList[index].split(".")[0])
+    clazz = getattr(module, pluginsList[index])
+    allClazzMethods = getClassMethods(clazz)
+    if "run" not in allClazzMethods.keys():
+        print(moduleString + " class add run method dynamically")
+        addRun(clazz)
+
+    # allClazzMethods = getClassMethods(clazz)
+    # print(moduleString + ": " + ", ".join(allClazzMethods.keys()))
+
+    # 从类注释中获取类参数及参数说明，格式@argument: argument doc
+    clazzDoc = clazz.__doc__
+    keyValues = {}
+    for arg in clazzDoc.split("\n"):
+        keyValue = arg.strip().split(":")
+        if len(keyValue) == 2 and keyValue[0].strip().startswith("@"):
+            keyValues[keyValue[0].strip().replace("@", "")] = keyValue[1].strip()
+
+    runMethod = getattr(clazz, "run")
+    runMethod(keyValues)
+
 def main():
     exePath = os.path.abspath(__file__)
     folder = os.path.dirname(exePath)

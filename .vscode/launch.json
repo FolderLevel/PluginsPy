@@ -10,7 +10,12 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "env": {"PYTHONPATH": "${workspaceRoot}:${workspaceRoot}/src"},
+            "windows": {
+                "env": {"PYTHONPATH": "${workspaceRoot};${workspaceRoot}/src"},
+            },
+            "linux": {
+                "env": {"PYTHONPATH": "${workspaceRoot}:${workspaceRoot}/src"},
+            },
             "args":[
                 "PluginExample",
             ]

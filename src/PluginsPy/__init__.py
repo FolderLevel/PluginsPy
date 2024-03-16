@@ -486,7 +486,13 @@ def PluginsPySelect(cmd, pluginsDir="Plugins") :
     for arg in clazzDoc.split("\n"):
         keyValue = arg.strip().split(":")
         if len(keyValue) == 2 and keyValue[0].strip().startswith("@"):
-            keyValues[keyValue[0].strip().replace("@", "")] = keyValue[1].strip()
+            matchObj = re.match(r'(\S*)\((\S*)\)', keyValue[0].strip().replace("@", ""))
+            if matchObj:
+                # print("-----------matchObj-----------")
+                # print(matchObj.group(1))
+                # print(matchObj.group(2))
+                # print("------------------------------")
+                keyValues[matchObj.group(1)] = matchObj.group(2)
 
     runMethod = getattr(clazz, "run")
     runMethod(keyValues)

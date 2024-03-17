@@ -16,6 +16,9 @@
             "linux": {
                 "env": {"PYTHONPATH": "${workspaceRoot}:${workspaceRoot}/src"},
             },
+            "osx": {
+                "env": {"PYTHONPATH": "${workspaceRoot}:${workspaceRoot}/src"},
+            },
             "args":[
                 "PluginExample",
             ]

@@ -324,6 +324,9 @@ def _showPlugins(plugins, helpList):
 
     return index
 
+def ListSelect(lists, helpLists):
+    return _showPlugins(lists, helpLists)
+
 def PluginsPy(cmd, skipedPlugins=[], pluginsDir="Plugins") :
 
     parser = argparse.ArgumentParser(prog=cmd)

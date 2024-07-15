@@ -11,6 +11,13 @@ import unicodedata
 import os
 import shutil
 
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
+
+from PluginsPy.UI import *
+from PluginsPy.Plugin import Plugin
+
 def getFiles(path) :
     for (dirpath, dirnames, filenames) in walk(path) :
         dirpath = dirpath
@@ -512,6 +519,29 @@ def PluginsPySelect(cmd, pluginsDir="Plugins") :
 
     runMethod = getattr(clazz, "run")
     runMethod(keyValues)
+
+def PluginsPyQT5() :
+
+    '''
+    PyQt5 for select
+    '''
+
+    sys.path.append(os.path.dirname(__file__))
+
+    app = QApplication(sys.argv)   # 创建一个QApplication，也就是你要开发的软件app
+    MainWindow = QMainWindow()     # 创建一个QMainWindow，用来装载你需要的各种组件、控件
+  
+    ui = Ui_MainWindow()           # ui是Ui_MainWindow()类的实例化对象
+    ui.setupUi(MainWindow)         # 执行类中的setupUi方法，方法的参数是第二步中创建的QMainWindow
+
+    MainWindow.setWindowIcon(QIcon(os.path.dirname(__file__) + "/assets/images/icon.png"))
+    size = MainWindow.geometry()
+    MainWindow.setFixedSize(size.width(), size.height())
+
+    plugin        = Plugin(ui, MainWindow)
+  
+    MainWindow.show()              # 执行QMainWindow的show()方法，显示这个QMainWindow
+    sys.exit(app.exec_())          # 使用exit()或者点击关闭按钮退出QApplicat
 
 def main():
     exePath = os.path.abspath(__file__)

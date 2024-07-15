@@ -11,3 +11,6 @@ publish:
 
 clean:
 	pip3 uninstall -y $(app)
+
+ui:
+	python3 -m PyQt5.uic.pyuic src/PluginsPy/UI.ui -o src/PluginsPy/UI.py

@@ -329,6 +329,10 @@ def ListSelect(lists, helpLists):
 
 def PluginsPy(cmd, skipedPlugins=[], pluginsDir="Plugins") :
 
+    '''
+    import plugin before select
+    '''
+
     parser = argparse.ArgumentParser(prog=cmd)
     subparsers = parser.add_subparsers(help='commands help')
 
@@ -381,16 +385,20 @@ def PluginsPy(cmd, skipedPlugins=[], pluginsDir="Plugins") :
         # print(moduleString + ": " + ", ".join(allClazzMethods.keys()))
 
         clazzDoc = clazz.__doc__
-        # 从类注释中获取类说明，也就是帮助
-        helpStr = clazzDoc.split("@")[0].strip().replace('\r', '').replace('\n', '').replace(' ', '').replace('\t', '')
-        parser_item = subparsers.add_parser(moduleString, help = helpStr)
-
-        # 从类注释中获取类参数及参数说明，格式@argument: argument doc
         keyValues = {}
-        for arg in clazzDoc.split("\n"):
-            keyValue = arg.strip().split(":")
-            if len(keyValue) == 2 and keyValue[0].strip().startswith("@"):
-                keyValues[keyValue[0].strip().replace("@", "")] = keyValue[1].strip()
+        helpStr = "undefined"
+
+        if clazzDoc != None:
+            # 从类注释中获取类说明，也就是帮助
+            helpStr = clazzDoc.split("@")[0].strip().replace('\r', '').replace('\n', '').replace(' ', '').replace('\t', '')
+
+            # 从类注释中获取类参数及参数说明，格式@argument: argument doc
+            for arg in clazzDoc.split("\n"):
+                keyValue = arg.strip().split(":")
+                if len(keyValue) == 2 and keyValue[0].strip().startswith("@"):
+                    keyValues[keyValue[0].strip().replace("@", "")] = keyValue[1].strip()
+
+        parser_item = subparsers.add_parser(moduleString, help = helpStr)
 
         # 转换为命令行参数
         for arg in keyValues:
@@ -440,6 +448,10 @@ def PluginsPy(cmd, skipedPlugins=[], pluginsDir="Plugins") :
 
 def PluginsPySelect(cmd, pluginsDir="Plugins") :
 
+    '''
+    import plugin after select
+    '''
+
     # 处理插件
     pluginsDict = {}
     pluginsList = []
@@ -486,16 +498,17 @@ def PluginsPySelect(cmd, pluginsDir="Plugins") :
     # 从类注释中获取类参数及参数说明，格式@argument: argument doc
     clazzDoc = clazz.__doc__
     keyValues = {}
-    for arg in clazzDoc.split("\n"):
-        keyValue = arg.strip().split(":")
-        if len(keyValue) == 2 and keyValue[0].strip().startswith("@"):
-            matchObj = re.match(r'(\S*)\((\S*)\)', keyValue[0].strip().replace("@", ""))
-            if matchObj:
-                # print("-----------matchObj-----------")
-                # print(matchObj.group(1))
-                # print(matchObj.group(2))
-                # print("------------------------------")
-                keyValues[matchObj.group(1)] = matchObj.group(2)
+    if clazzDoc != None:
+        for arg in clazzDoc.split("\n"):
+            keyValue = arg.strip().split(":")
+            if len(keyValue) == 2 and keyValue[0].strip().startswith("@"):
+                matchObj = re.match(r'(\S*)\((\S*)\)', keyValue[0].strip().replace("@", ""))
+                if matchObj:
+                    # print("-----------matchObj-----------")
+                    # print(matchObj.group(1))
+                    # print(matchObj.group(2))
+                    # print("------------------------------")
+                    keyValues[matchObj.group(1)] = matchObj.group(2)
 
     runMethod = getattr(clazz, "run")
     runMethod(keyValues)

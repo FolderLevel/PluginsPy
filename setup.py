@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="PluginsPy",
-    version="0.1.6",
+    version="0.1.7",
     author="zengjf",
     author_email="zengjf42@163.com",
     description="Plugins Framework",
@@ -28,5 +28,5 @@ setuptools.setup(
         "windows-curses;platform_system=='Windows'",
         "PyQt5"
     ],
-    entry_points={"console_scripts": ["pluginspy-build=PluginsPy:main"]},
+    entry_points={"console_scripts": ["pluginspy=PluginsPy:main"]},
 )

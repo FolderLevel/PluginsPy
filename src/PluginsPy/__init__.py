@@ -15,7 +15,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
-from PluginsPy.UI import *
+from PluginsPy.MainUI import *
 from PluginsPy.Plugin import Plugin
 
 def getFiles(path) :

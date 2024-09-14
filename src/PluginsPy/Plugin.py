@@ -5,7 +5,8 @@ import re
 import os
 import inspect
 
-from PluginsPy.UI import *
+from PluginsPy.MainUI import *
+from PluginsPy.Template import *
 
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
@@ -21,8 +22,14 @@ class Plugin:
         # Plugins
         ui.PSPluginsComboBox.currentIndexChanged.connect(self.PSPluginsChanged)
         ui.PSRunPushButton.clicked.connect(self.PSRunClick)
+        ui.PSTempPushButton.clicked.connect(self.PSTempClick)
 
         self.initPlugins()
+
+    def PSTempClick(self):
+        print("PSTempClick")
+
+        self.templateDiag = Template()
 
     def initPlugins(self):
         self.plugins     = {}

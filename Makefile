@@ -13,4 +13,5 @@ clean:
 	pip3 uninstall -y $(app)
 
 ui:
-	python3 -m PyQt5.uic.pyuic src/PluginsPy/UI.ui -o src/PluginsPy/UI.py
+	python3 -m PyQt5.uic.pyuic src/PluginsPy/MainUI.ui -o src/PluginsPy/MainUI.py
+	python3 -m PyQt5.uic.pyuic src/PluginsPy/TemplateUI.ui -o src/PluginsPy/TemplateUI.py

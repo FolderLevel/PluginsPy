@@ -4,9 +4,17 @@ import importlib
 import re
 import os
 import inspect
+import datetime
 
 from PluginsPy.MainUI import *
 from PluginsPy.Template import *
+
+import VisualLog.LogParser as LogParser
+import VisualLog.MatplotlibZoom as MatplotlibZoom
+
+import matplotlib.pyplot as plot
+from matplotlib.figure import Figure
+from matplotlib.axes import Axes
 
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
@@ -22,9 +30,143 @@ class Plugin:
         # Plugins
         ui.PSPluginsComboBox.currentIndexChanged.connect(self.PSPluginsChanged)
         ui.PSRunPushButton.clicked.connect(self.PSRunClick)
+        ui.PSRegexPushButton.clicked.connect(self.PSRegexClick)
+        ui.PSVisualLogPushButton.clicked.connect(self.PSVisualLogClick)
         ui.PSTempPushButton.clicked.connect(self.PSTempClick)
 
+        ui.PSRegexPlainTextEdit.setPlainText("(\\d{2}-\\d{2}\\s+\\d{2}:\\d{2}:\\d{2}\\.\\d*)\\s+\\d+\\s+\\d+\\s+\\w+\\s+.*: In wakeup_callback: resumed from suspend (\\d+)")
+
+        ui.PSXAxisLineEdit.setText("0")
+        ui.PSDataIndexLineEdit.setText("0, 1")
+
         self.initPlugins()
+
+        self.lineInfosOfFiles = []
+
+    def getVisualLogData(self):
+        data = {}
+
+        data["xAxis"]     = eval("[" + self.ui.PSXAxisLineEdit.text() + "]")
+        data["dataIndex"] = eval("[" + self.ui.PSDataIndexLineEdit.text() + "]")
+
+        for i in range(len(data["xAxis"])):
+            if data["xAxis"][i] < 0:
+                data["xAxis"][i] = 0
+
+        if len(data["dataIndex"]) == 0:
+            data["dataIndex"].append(0)
+
+        return data
+
+    def PSVisualLogClick(self):
+        print("PSVisualLogClick")
+
+        # 清理matplotlib相关绘图，防止出现未知异常报错
+        plot.close()
+
+        self.visualLogData = self.getVisualLogData()
+
+        MatplotlibZoom.Show(callback=self.defaultShowCallback, rows = 1, cols = 1)
+
+    def defaultShowCallback(self, fig: Figure, index):
+        # https://matplotlib.org/stable/api/
+        ax: Axes = fig.get_axes()[index]
+        ax.set_xlabel("X")
+        ax.set_ylabel("Y")
+
+        print(self.visualLogData)
+
+        for self.lineInfos in self.lineInfosOfFiles:
+            if len(self.lineInfos) == 0:
+                continue
+
+            print(self.lineInfos[0])
+            if len(self.visualLogData["xAxis"]) > 0:
+                # 迭代第一行数据，相当于绘制多少条线，每一列相当于一条线，一行数据中由x轴和y轴组成
+                #   1. i表示当前绘制第几条线
+                #   2. x表示当前当前x轴索引
+                for i in range(len(self.lineInfos[0])):
+                    if i in self.visualLogData["dataIndex"]:
+                        # 迭代x轴，主要是获取x轴索引，相当于用第j个x轴绘制第i个y轴
+                        for j in range(len(self.visualLogData["xAxis"])):
+                            x = self.visualLogData["xAxis"][j]                                               # 获取x索引
+                            if (i == x) and (x in self.visualLogData["dataIndex"]):                          # 处理针对X轴绘图
+                                # i == x的会进入这个if，但是数组长度不同不会处理
+                                # datetime模式，只以日期为X轴，Y轴表示当前计数，正常的模式下X轴不处理
+                                if isinstance(self.lineInfos[0][i], datetime.datetime) and len(self.visualLogData["xAxis"]) == len(self.lineInfos[0]):
+                                    pointCount = 0
+
+                                    for s in self.lineInfos:
+                                        pointCount += 1
+
+                                        # 文字
+                                        ax.text(s[x], pointCount + 0.2, str(pointCount), fontsize=9)
+                                        # 圆点
+                                        ax.plot(s[x], pointCount, 'o')
+                                        # 虚线
+                                        ax.plot([s[x], s[x]], [pointCount, 0], linestyle = 'dotted')
+                            else:                                                                       # 用X轴索引数据绘制Y轴
+                                # dataIndex表示必须要绘制的图，不一定包括X轴
+                                if (i in self.visualLogData["dataIndex"]):
+                                    if isinstance(self.lineInfos[0][i], str):
+                                        pointCount = 1
+
+                                        for s in self.lineInfos:
+                                            pointCount += 1
+
+                                            # 文字
+                                            ax.text(s[x], pointCount + 0.2, s[i], fontsize=9, rotation=90)
+                                            # 圆点
+                                            ax.plot(s[x], pointCount, 'o')
+                                            # 虚线
+                                            ax.plot([s[x], s[x]], [pointCount, 0], linestyle = 'dotted')
+                                    else:
+                                        ax.plot([s[x] for s in self.lineInfos], [s[i] for s in self.lineInfos])
+                                        for s in self.lineInfos:
+                                            ax.plot(s[x], s[i], 'o')
+
+                                # 处理针对X轴绘制垂直线
+                                if (x in self.visualLogData["dataIndex"]):
+                                    for s in self.lineInfos:
+                                        ax.plot([s[x], s[x]], [s[i], 0], linestyle = 'dotted')
+            else:
+                # 迭代第一行数据，相当于绘制多少条线，每一列相当于一条线
+                for i in range(len(self.lineInfos[0])):
+                    if i in self.visualLogData["dataIndex"]:
+                        # ax.plot(range(len(self.lineInfos)), [s[i] for s in self.lineInfos], label = self.labels[i])
+                        ax.plot(range(len(self.lineInfos)), [s[i] for s in self.lineInfos])
+
+        ax.legend()
+
+    def PSRegexClick(self):
+        print("PSRegexClick")
+
+        self.lineInfosOfFiles = []
+
+        regexArray = self.ui.PSRegexPlainTextEdit.toPlainText().strip()
+        print(regexArray)
+
+        if len(regexArray) > 0:
+            keyValues = self.getKeyValues()
+            for key in keyValues.keys():
+                if "\\" in keyValues[key] or "/" in keyValues[key]:
+                    print(regexArray)
+                    print(key + " -> " + keyValues[key])
+
+                    if os.path.exists(keyValues[key]):
+                        print(keyValues[key])
+                        self.lineInfosOfFiles.append(LogParser.logFileParser(
+                            keyValues[key],
+                            # r"(\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\.\d*)\s+\d+\s+\d+\s+\w+\s+.*: In wakeup_callback: resumed from suspend"
+                            regexArray.split("\n")
+                        ))
+
+                    else:
+                        print("can't file path:" + keyValues["key"])
+
+        for lineInfos in self.lineInfosOfFiles:
+            for info in lineInfos:
+                print(info)
 
     def PSTempClick(self):
         print("PSTempClick")
@@ -139,6 +281,13 @@ class Plugin:
     def PSRunClick(self):
         print("PSRunClick")
 
+        keyValues = self.getKeyValues()
+        ret = self.getClazzWithRun(self.pluginsKeys[self.ui.PSPluginsComboBox.currentIndex()], keyValues)
+
+        if len(ret) > 0:
+            self.ui.PSInfoPlainTextEdit.setPlainText(ret)
+
+    def getKeyValues(self):
         keyValues = {}
         for i in range(self.ui.PSGridLayout.rowCount()):
             if self.ui.PSGridLayout.itemAtPosition(i, 0) == None:
@@ -154,15 +303,12 @@ class Plugin:
                         value = os.getcwd() + "/" + value
             elif isinstance(valueWidget, QComboBox):
                 value = valueWidget.currentText()
-
+            
             keyValues[key] = value
 
         print(keyValues)
 
-        ret = self.getClazzWithRun(self.pluginsKeys[self.ui.PSPluginsComboBox.currentIndex()], keyValues)
-
-        if len(ret) > 0:
-            self.ui.PSInfoPlainTextEdit.setPlainText(ret)
+        return keyValues
 
     def getClazzWithRun(self, moduleString, args):
         # import file

@@ -26,7 +26,8 @@ setuptools.setup(
     include_package_data=True,
     install_requires=[
         "windows-curses;platform_system=='Windows'",
-        "PyQt5"
+        "PyQt5",
+        "VisualLog",
     ],
     entry_points={"console_scripts": ["pluginspy=PluginsPy:main"]},
 )

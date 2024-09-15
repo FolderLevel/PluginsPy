@@ -4,6 +4,7 @@ import importlib
 import re
 import os
 import inspect
+import json
 
 from PluginsPy.MainUI import *
 from PluginsPy.Template import *
@@ -18,6 +19,7 @@ class Plugin:
         self.ui               = ui
         self.gridLayout       = ui.PSGridLayout
         self.MainWindow       = MainWindow
+        self.configPath       = 'output/visualLogConfig.txt'
 
         # Plugins
         ui.PSPluginsComboBox.currentIndexChanged.connect(self.PSPluginsChanged)
@@ -26,10 +28,20 @@ class Plugin:
         ui.PSVisualLogPushButton.clicked.connect(self.PSVisualLogClick)
         ui.PSTempPushButton.clicked.connect(self.PSTempClick)
 
-        ui.PSRegexPlainTextEdit.setPlainText("(\\d{2}-\\d{2}\\s+\\d{2}:\\d{2}:\\d{2}\\.\\d*)\\s+\\d+\\s+\\d+\\s+\\w+\\s+.*: In wakeup_callback: resumed from suspend (\\d+)")
+        if os.path.exists(self.configPath):
+            with open(self.configPath, 'r') as f:
+                configData = json.load(f)
 
-        ui.PSXAxisLineEdit.setText("0")
-        ui.PSDataIndexLineEdit.setText("0, 1")
+                if "regex" in configData.keys():
+                    ui.PSRegexPlainTextEdit.setPlainText(configData["regex"])
+                if "xAxis" in configData.keys():
+                    ui.PSXAxisLineEdit.setText(",".join([str(i) for i in configData["xAxis"]]))
+                if "dataIndex" in configData.keys():
+                    ui.PSDataIndexLineEdit.setText(",".join([str(i) for i in configData["dataIndex"]]))
+        else:
+            ui.PSRegexPlainTextEdit.setPlainText("(\\d{2}-\\d{2}\\s+\\d{2}:\\d{2}:\\d{2}\\.\\d*)\\s+\\d+\\s+\\d+\\s+\\w+\\s+.*: In wakeup_callback: resumed from suspend (\\d+)")
+            ui.PSXAxisLineEdit.setText("0")
+            ui.PSDataIndexLineEdit.setText("0, 1")
 
         self.initPlugins()
 
@@ -97,6 +109,16 @@ class Plugin:
 
         regexArray = self.ui.PSRegexPlainTextEdit.toPlainText().strip()
         print(regexArray)
+
+        if os.path.exists("output"):
+            saveConfig = dict(self.getVisualLogData())
+            saveConfig["regex"] = regexArray
+
+            jsonStr = json.dumps(saveConfig, indent=4)
+            with open(self.configPath, 'w') as f:
+                f.write(jsonStr)
+            
+            print("saved current config to " + self.configPath)
 
         if len(regexArray) > 0:
             keyValues = self.getKeyValues()

@@ -52,7 +52,8 @@ class VisualLogPlot:
                             if (i == x) and (x in self.visualLogData["dataIndex"]):                          # 处理针对X轴绘图
                                 # i == x的会进入这个if，但是数组长度不同不会处理
                                 # datetime模式，只以日期为X轴，Y轴表示当前计数，正常的模式下X轴不处理
-                                if isinstance(self.lineInfos[0][i], datetime.datetime) and len(self.visualLogData["xAxis"]) == len(self.lineInfos[0]):
+                                # if isinstance(self.lineInfos[0][i], datetime.datetime) and len(self.visualLogData["xAxis"]) == len(self.lineInfos[0]):
+                                if isinstance(self.lineInfos[0][i], datetime.datetime) and len(self.visualLogData["dataIndex"]) == 1:
                                     pointCount = 0
 
                                     for s in self.lineInfos:
@@ -67,6 +68,10 @@ class VisualLogPlot:
                             else:                                                                       # 用X轴索引数据绘制Y轴
                                 # dataIndex表示必须要绘制的图，不一定包括X轴
                                 if (i in self.visualLogData["dataIndex"]):
+                                    # if
+                                    #     绘制垂直线
+                                    # else
+                                    #     不绘制垂直线
                                     if isinstance(self.lineInfos[0][i], str):
                                         pointCount = 1
 

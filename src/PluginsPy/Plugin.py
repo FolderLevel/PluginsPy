@@ -7,7 +7,6 @@ import inspect
 import json
 
 from PluginsPy.MainUI import *
-from PluginsPy.Template import *
 
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
@@ -150,7 +149,66 @@ class Plugin:
     def PSTempClick(self):
         print("PSTempClick")
 
-        self.templateDiag = Template()
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        filePath, _ = QFileDialog.getSaveFileName(None,
+                                              "Save File",
+                                              "",
+                                              "All Files (*);;Text Files (*.txt)",
+                                              options=options)
+        if filePath.strip() == "":
+            print("please input file name")
+            return
+
+        relFilePath = filePath.replace(os.getcwd(), "").replace("\\", "/")[1:]
+        relFileDir = os.path.dirname(relFilePath)
+        fileName = os.path.basename(relFilePath).capitalize()
+        if not fileName.endswith(".py"):
+            fileName += ".py"
+
+        print(relFileDir)
+        print(fileName)
+
+        regexArray = self.ui.PSRegexPlainTextEdit.toPlainText().strip()
+        visualLogData = self.getVisualLogData()
+
+        keyValues = self.getKeyValues()
+        moduleArgs = ""
+        for key in keyValues.keys():
+            if "/" in keyValues[key]:
+                moduleArgs += "    @" + key + "(" + keyValues[key] + "): None\n"
+
+        with open(relFileDir + "/" + fileName, mode="w", encoding="utf-8") as f:
+            outputArray = [
+                    "#!/usr/bin/env python3",
+                    "",
+                    "import datetime",
+                    "",
+                    "import VisualLog.LogParser as LogParser",
+                    "import VisualLog.MatplotlibZoom as MatplotlibZoom",
+                    "",
+                    "import matplotlib.pyplot as plot",
+                    "from matplotlib.figure import Figure",
+                    "from matplotlib.axes import Axes",
+                    "",
+                    "class " + fileName.replace(".py", "") + ":",
+                    "",
+                    "    \"\"\"",
+                    moduleArgs.strip(),
+                    "    \"\"\"",
+                    "",
+                    "    def __init__(self, kwargs):",
+                    "        regex      = '" + regexArray + "'",
+                    "        xAxis      = [" + (", ".join([str(i) for i in visualLogData["xAxis"]])) + "]",
+                    "        dataIndex  = [" + (", ".join([str(i) for i in visualLogData["dataIndex"]])) + "]",
+                    "",
+                    "        MatplotlibZoom.Show(callback=self.defaultShowCallback, rows = 1, cols = 1)",
+                    "",
+                    "    def defaultShowCallback(self, fig: Figure, index): ",
+                    "         pass"
+                ]
+
+            f.write("\n".join(outputArray))
 
     def initPlugins(self):
         self.plugins     = {}

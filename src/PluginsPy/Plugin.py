@@ -64,14 +64,25 @@ class Plugin:
         i = 0
         for key in keyValues.keys():
             label = QLabel(key)
-            value = QLineEdit(keyValues[key])
-            gridLayout.addWidget(label, i, 0, 1, 1)
-            gridLayout.addWidget(value, i, 1, 1, 1)
+            if isinstance(keyValues[key], str):
+                value = QLineEdit(keyValues[key])
+                gridLayout.addWidget(label, i, 0, 1, 1)
+                gridLayout.addWidget(value, i, 1, 1, 1)
 
-            if "/" in keyValues[key] or "\\" in keyValues[key]:
-                button = QPushButton("Select File ...")
-                button.clicked.connect(self.PSPluginsArgsClicked)
-                gridLayout.addWidget(button, i, 2, 1, 1)
+                if "/" in keyValues[key] or "\\" in keyValues[key]:
+                    button = QPushButton("Select File ...")
+                    button.clicked.connect(self.PSPluginsArgsClicked)
+                    gridLayout.addWidget(button, i, 2, 1, 1)
+            else:
+                value = QComboBox()
+                comboxValue = (list)(keyValues[key][1])
+                value.addItems(comboxValue)
+
+                gridLayout.addWidget(label, i, 0, 1, 1)
+                gridLayout.addWidget(value, i, 1, 1, 1)
+
+                value.currentIndexChanged.connect(self.PSArgsComboxChanged)
+                value.setCurrentIndex(comboxValue.index(keyValues[key][0]))
 
             i += 1
 
@@ -89,8 +100,7 @@ class Plugin:
 
 
     def findWidgetPosition(self, gridLayout):
-        print(gridLayout.rowCount())
-        print(gridLayout.columnCount())
+        print("row, col: " + str(gridLayout.rowCount()) + ", " + str(gridLayout.columnCount()))
         for i in range(gridLayout.rowCount()):
             for j in range(gridLayout.columnCount()):
                 if gridLayout.itemAtPosition(i, j) != None and (gridLayout.itemAtPosition(i, j).widget() == self.MainWindow.sender()):
@@ -108,16 +118,22 @@ class Plugin:
 
         # 从类注释中获取类参数及参数说明，格式@argument: argument doc
         keyValues = {}
+        keyValueSelect = None
         if clazzDoc != None:
             for arg in clazzDoc.split("\n"):
                 keyValue = arg.strip().split(":")
                 if len(keyValue) == 2 and keyValue[0].strip().startswith("@"):
+                    if "|" in keyValue[1]:
+                        keyValueSelect = keyValue[1].strip().split("|")
                     key = keyValue[0].strip().replace("@", "")
                     matchObj     = re.match(r'(.*)\((.*)\)', key)
                     if matchObj:
                         keyValue = matchObj.groups()
-                        keyValues[keyValue[0]] = keyValue[1]
 
+                        if keyValueSelect != None:
+                            keyValues[keyValue[0]] = [keyValue[1], keyValueSelect]
+                        else:
+                            keyValues[keyValue[0]] = keyValue[1]
         return keyValues
 
     def PSRunClick(self):
@@ -129,11 +145,15 @@ class Plugin:
                 continue
 
             key = self.ui.PSGridLayout.itemAtPosition(i, 0).widget().text()
-            value = self.ui.PSGridLayout.itemAtPosition(i, 1).widget().text()
-            if not os.path.exists(value):
-                if "/" in value or "\\" in value:
-                    print("can't find: " + value)
-                    value = os.getcwd() + "/" + value
+            valueWidget = self.ui.PSGridLayout.itemAtPosition(i, 1).widget()
+            if isinstance(valueWidget, QLineEdit):
+                value = valueWidget.text()
+                if not os.path.exists(value):
+                    if "/" in value or "\\" in value:
+                        print("can't find: " + value)
+                        value = os.getcwd() + "/" + value
+            elif isinstance(valueWidget, QComboBox):
+                value = valueWidget.currentText()
 
             keyValues[key] = value
 
@@ -161,7 +181,7 @@ class Plugin:
             else:
                 ret = invert_op()
             print("<<< end plugin start method")
-        
+
         if ret == None:
             return ""
         elif isinstance(ret, list):
@@ -188,6 +208,14 @@ class Plugin:
         self.fillePSGridLayout(self.ui.PSGridLayout, self.getClazzArgs(self.pluginsKeys[pluginsIndex]))
 
         print(self.pluginsKeys[pluginsIndex])
+
+    def PSArgsComboxChanged(self):
+        print("PSArgsComboxChanged")
+        row, col = self.findWidgetPosition(self.ui.PSGridLayout)
+        print("select: %d, %d" % (row, col))
+
+        comboBox: QComboBox = self.ui.PSGridLayout.itemAtPosition(row, col).widget()
+        print(comboBox.currentText())
 
     def getFiles(self, path) :
         for (dirpath, dirnames, filenames) in os.walk(path) :

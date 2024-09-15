@@ -5,7 +5,7 @@ class PluginExample:
     PluginExample类是一个编写LogTools插件的示例
 
     @id(123456): 唯一码
-    @name(zengjf): 唯一码别名
+    @name(zengaz): zengjf|zengaz
     """
 
     def __init__(self, kwargs):

@@ -5,6 +5,7 @@ class GuangDong:
     Shenzhen类是一个编写LogTools插件的示例
 
     @name(zengjf): 唯一码别名
+    @path(dir/file): 唯一码别名
     """
 
     def __init__(self, kwargs):

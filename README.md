@@ -38,20 +38,24 @@
       """
       PluginExample类是一个编写LogTools插件的示例
 
-      @id: 唯一码
-      @name: 唯一码别名
+      @id(0): 唯一码
+      @name(zengjf): 唯一码别名
       """
   ```
+  * `@key(value): Description`
 * `0.1.*`版本
   ```python
   class PluginExample:
       """
       PluginExample类是一个编写LogTools插件的示例
 
-      @id: 唯一码
-      @name: 唯一码别名
+      @id(1): 唯一码
+      @name(zengjf): 唯一码别名
       """
   ```
+  * `@key(value): Description`
+  * `@key(value): value 1|value 2|value 3`
+    * PyQt5 UI支持该配置
 
 ### 3.3 插件使用
 

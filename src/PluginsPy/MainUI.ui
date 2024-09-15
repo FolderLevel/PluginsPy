@@ -114,9 +114,9 @@
         </spacer>
        </item>
        <item>
-        <widget class="QPushButton" name="PSTempPushButton">
+        <widget class="QPushButton" name="PSVisualLogPushButton">
          <property name="text">
-          <string>Template</string>
+          <string>Visual Log</string>
          </property>
         </widget>
        </item>
@@ -134,9 +134,9 @@
         </spacer>
        </item>
        <item>
-        <widget class="QPushButton" name="PSVisualLogPushButton">
+        <widget class="QPushButton" name="PSTempPushButton">
          <property name="text">
-          <string>Visual Log</string>
+          <string>Template</string>
          </property>
         </widget>
        </item>

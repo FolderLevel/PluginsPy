@@ -5,8 +5,11 @@ import re
 import os
 import inspect
 import json
+from datetime import datetime
+import subprocess
 
 from PluginsPy.MainUI import *
+from PluginsPy.Config import Config
 
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
@@ -18,7 +21,7 @@ class Plugin:
         self.ui               = ui
         self.gridLayout       = ui.PSGridLayout
         self.MainWindow       = MainWindow
-        self.configPath       = 'output/visualLogConfig.txt'
+        self.config           = Config()
 
         # Plugins
         ui.PSPluginsComboBox.currentIndexChanged.connect(self.PSPluginsChanged)
@@ -26,21 +29,6 @@ class Plugin:
         ui.PSRegexPushButton.clicked.connect(self.PSRegexClick)
         ui.PSVisualLogPushButton.clicked.connect(self.PSVisualLogClick)
         ui.PSTempPushButton.clicked.connect(self.PSTempClick)
-
-        if os.path.exists(self.configPath):
-            with open(self.configPath, 'r') as f:
-                configData = json.load(f)
-
-                if "regex" in configData.keys():
-                    ui.PSRegexPlainTextEdit.setPlainText(configData["regex"])
-                if "xAxis" in configData.keys():
-                    ui.PSXAxisLineEdit.setText(",".join([str(i) for i in configData["xAxis"]]))
-                if "dataIndex" in configData.keys():
-                    ui.PSDataIndexLineEdit.setText(",".join([str(i) for i in configData["dataIndex"]]))
-        else:
-            ui.PSRegexPlainTextEdit.setPlainText("(\\d{2}-\\d{2}\\s+\\d{2}:\\d{2}:\\d{2}\\.\\d*)\\s+\\d+\\s+\\d+\\s+\\w+\\s+.*: In wakeup_callback: resumed from suspend (\\d+)")
-            ui.PSXAxisLineEdit.setText("0")
-            ui.PSDataIndexLineEdit.setText("0, 1")
 
         self.initPlugins()
 
@@ -110,14 +98,9 @@ class Plugin:
         print(regexArray)
 
         if os.path.exists("output"):
-            saveConfig = dict(self.getVisualLogData())
-            saveConfig["regex"] = regexArray
-
-            jsonStr = json.dumps(saveConfig, indent=4)
-            with open(self.configPath, 'w') as f:
-                f.write(jsonStr)
-            
-            print("saved current config to " + self.configPath)
+            self.config.setKeyValues(self.getVisualLogData())
+            self.config.setKeyValue("regex", regexArray)
+            self.config.saveConfig()
 
         if len(regexArray) > 0:
             keyValues = self.getKeyValues()
@@ -178,9 +161,21 @@ class Plugin:
             if "/" in keyValues[key]:
                 moduleArgs += "    @" + key + "(" + keyValues[key] + "): None\n"
 
+        res = subprocess.run(["git", "config", "user.name"], stdout=subprocess.PIPE)
+        authorName = res.stdout.strip().decode()
+        if len(authorName) == 0:
+            authorName = os.getlogin()
+
         with open(relFileDir + "/" + fileName, mode="w", encoding="utf-8") as f:
             outputArray = [
                     "#!/usr/bin/env python3",
+                    "# -*- coding: utf-8 -*-",
+                    "",
+                    "\"\"\"",
+                    "Author: " + authorName,
+                    "Date: "   + datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "License: MIT License",
+                    "\"\"\"",
                     "",
                     "import datetime",
                     "",
@@ -194,7 +189,7 @@ class Plugin:
                     "class " + fileName.replace(".py", "") + ":",
                     "",
                     "    \"\"\"",
-                    moduleArgs.strip(),
+                    moduleArgs.rstrip(),
                     "    \"\"\"",
                     "",
                     "    def __init__(self, kwargs):",
@@ -209,6 +204,8 @@ class Plugin:
                 ]
 
             f.write("\n".join(outputArray))
+
+        self.initPlugins()
 
     def initPlugins(self):
         self.plugins     = {}
@@ -232,9 +229,33 @@ class Plugin:
  
         self.pluginsKeys = list(self.plugins.keys())
         # self.ui.PSPluginsComboBox.addItems(self.pluginsKeys)
+        self.ui.PSPluginsComboBox.clear()
         self.ui.PSPluginsComboBox.addItems(self.plugins.values())
         # 下面这句会导致重复加载界面
         # self.fillePSGridLayout(self.ui.PSGridLayout, self.getClazzArgs(self.firstPlugin))
+
+        self.setSavedConfig()
+
+    def setSavedConfig(self):
+        configData = self.config.keyValues
+
+        if "regex" in configData.keys():
+            self.ui.PSRegexPlainTextEdit.setPlainText(configData["regex"])
+        else:
+            self.ui.PSRegexPlainTextEdit.setPlainText("(\\d{2}-\\d{2}\\s+\\d{2}:\\d{2}:\\d{2}\\.\\d*)\\s+\\d+\\s+\\d+\\s+\\w+\\s+.*: In wakeup_callback: resumed from suspend (\\d+)")
+
+        if "xAxis" in configData.keys():
+            self.ui.PSXAxisLineEdit.setText(",".join([str(i) for i in configData["xAxis"]]))
+        else:
+            self.ui.PSXAxisLineEdit.setText("0")
+
+        if "dataIndex" in configData.keys():
+            self.ui.PSDataIndexLineEdit.setText(",".join([str(i) for i in configData["dataIndex"]]))
+        else:
+            self.ui.PSDataIndexLineEdit.setText("0, 1")
+
+        if "pluginIndex" in configData.keys() and configData["pluginIndex"] < len(self.plugins.values()):
+            self.ui.PSPluginsComboBox.setCurrentIndex(configData["pluginIndex"])
 
     def fillePSGridLayout(self, gridLayout: QGridLayout, keyValues: dict):
         if len(keyValues) == 0:
@@ -297,19 +318,22 @@ class Plugin:
 
         # 从类注释中获取类参数及参数说明，格式@argument: argument doc
         keyValues = {}
-        keyValueSelect = None
+        keyValueSelect = []
         if clazzDoc != None:
             for arg in clazzDoc.split("\n"):
                 keyValue = arg.strip().split(":")
                 if len(keyValue) == 2 and keyValue[0].strip().startswith("@"):
                     if "|" in keyValue[1]:
-                        keyValueSelect = keyValue[1].strip().split("|")
+                        for item in keyValue[1].strip().split("|"):
+                            if len(item.strip()) != 0:
+                                keyValueSelect.append(item.strip())
+
                     key = keyValue[0].strip().replace("@", "")
                     matchObj     = re.match(r'(.*)\((.*)\)', key)
                     if matchObj:
                         keyValue = matchObj.groups()
 
-                        if keyValueSelect != None:
+                        if len(keyValueSelect) != 0:
                             keyValues[keyValue[0]] = [keyValue[1], keyValueSelect]
                         else:
                             keyValues[keyValue[0]] = keyValue[1]
@@ -323,6 +347,9 @@ class Plugin:
 
         if len(ret) > 0:
             self.ui.PSInfoPlainTextEdit.setPlainText(ret)
+
+        self.config.setKeyValue("pluginIndex", self.ui.PSPluginsComboBox.currentIndex())
+        self.config.saveConfig()
 
     def getKeyValues(self):
         keyValues = {}

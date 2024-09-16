@@ -1,9 +1,6 @@
 __pycache__
 .DS_Store
-input/*
-!input/empty
-output/*
-!output/empty
+output
 dist
 src/PluginsPy.egg-info
 build

@@ -116,14 +116,14 @@ class Plugin:
                         moduleString = "VisualLogPlot"
                         # import file
                         module = importlib.import_module("PluginsPy." + moduleString)
-                        # get class
+                        # get class, file list to parse
                         clazz  = getattr(module, moduleString)
                         method = getattr(clazz, "parseData")
-                        lineInfos = method(keyValues[key], regexArray)
+                        lineInfos, filenames = method(keyValues[key], regexArray)
 
                         self.lineInfosOfFiles.append(lineInfos)
                     else:
-                        print("can't file path:" + keyValues["key"])
+                        print("can't file path:" + keyValues[key])
 
         for lineInfos in self.lineInfosOfFiles:
             for info in lineInfos:
@@ -136,7 +136,7 @@ class Plugin:
         options |= QFileDialog.DontUseNativeDialog
         filePath, _ = QFileDialog.getSaveFileName(None,
                                               "Save File",
-                                              "",
+                                              os.getcwd() + "/Plugins",
                                               "All Files (*);;Text Files (*.txt)",
                                               options=options)
         if filePath.strip() == "":
@@ -157,9 +157,21 @@ class Plugin:
 
         keyValues = self.getKeyValues()
         moduleArgs = ""
+        clazzArgs  = ""
+        # parseFilenameArgs = "        parseFilenames = ["
+        parseFilenameArgs = []
         for key in keyValues.keys():
             if "/" in keyValues[key]:
-                moduleArgs += "    @" + key + "(" + keyValues[key] + "): None\n"
+                pathValue: str = keyValues[key]
+                if os.getcwd() in pathValue:
+                    pathValue = pathValue.replace(os.getcwd(), "").replace("\\", "/")[1:]
+
+                moduleArgs += "    @" + key + "(" + pathValue + "): None\n"
+                clazzArgs  += "        " + key + " = kwargs[\"" + key + "\"]\n"
+
+                parseFilenameArgs.append(key)
+
+        parseFilenameArgs = "parseFilenames = [" + ", ".join(parseFilenameArgs) + "]"
 
         res = subprocess.run(["git", "config", "user.name"], stdout=subprocess.PIPE)
         authorName = res.stdout.strip().decode()
@@ -179,6 +191,8 @@ class Plugin:
                     "",
                     "import datetime",
                     "",
+                    "from PluginsPy.VisualLogPlot import VisualLogPlot",
+                    "",
                     "import VisualLog.LogParser as LogParser",
                     "import VisualLog.MatplotlibZoom as MatplotlibZoom",
                     "",
@@ -193,14 +207,24 @@ class Plugin:
                     "    \"\"\"",
                     "",
                     "    def __init__(self, kwargs):",
-                    "        regex      = '" + regexArray + "'",
-                    "        xAxis      = [" + (", ".join([str(i) for i in visualLogData["xAxis"]])) + "]",
-                    "        dataIndex  = [" + (", ".join([str(i) for i in visualLogData["dataIndex"]])) + "]",
                     "",
-                    "        MatplotlibZoom.Show(callback=self.defaultShowCallback, rows = 1, cols = 1)",
+                    "        print(\"" + fileName.replace(".py", "") + " args:\")",
+                    "        print(kwargs)",
                     "",
-                    "    def defaultShowCallback(self, fig: Figure, index): ",
-                    "         pass"
+                    clazzArgs.rstrip(),
+                    "",
+                    "        regex                  = '" + regexArray + "'",
+                    "        kwargs[\"xAxis\"]      = [" + (", ".join([str(i) for i in visualLogData["xAxis"]])) + "]",
+                    "        kwargs[\"dataIndex\"]  = [" + (", ".join([str(i) for i in visualLogData["dataIndex"]])) + "]",
+                    "",
+                    "        " + parseFilenameArgs,
+                    "        kwargs[\"lineInfosFiles\"] = LogParser.logFileParser(",
+                    "                parseFilenames,",
+                    "                regex,",
+                    "            )",
+                    "",
+                    "        MatplotlibZoom.Show(callback=VisualLogPlot.defaultShowCallback, rows = 1, cols = 1, args=kwargs)",
+                    ""
                 ]
 
             f.write("\n".join(outputArray))

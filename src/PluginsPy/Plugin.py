@@ -143,7 +143,8 @@ class Plugin:
             print("please input file name")
             return
 
-        relFilePath = filePath.replace(os.getcwd(), "").replace("\\", "/")[1:]
+        # Windows，os.getcwd path with "\"，QFileDialog get path with "/"
+        relFilePath = filePath.replace(os.getcwd().replace("\\", "/"), "").replace("\\", "/")[1:]
         relFileDir = os.path.dirname(relFilePath)
         fileName = os.path.basename(relFilePath).capitalize()
         if not fileName.endswith(".py"):

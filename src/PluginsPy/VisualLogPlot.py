@@ -54,7 +54,7 @@ class VisualLogPlot:
                 if len(lineInfos) == 0:
                     continue
 
-                print(lineInfos[0])
+                # print(lineInfos[0])
                 if len(visualLogData["xAxis"]) > 0:
                     # 迭代第一行数据，相当于绘制多少条线，每一列相当于一条线，一行数据中由x轴和y轴组成
                     #   1. i表示当前绘制第几条线

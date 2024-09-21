@@ -52,7 +52,7 @@ class VisualLogPlot:
             return
 
         # get keys
-        keys = set()
+        keys = []
         keyIndex = visualLogData["xAxis"][0]
         valueIndex = visualLogData["dataIndex"][0]
 
@@ -67,10 +67,11 @@ class VisualLogPlot:
             # 单个数组
             for info in lineInfos:
                 if isinstance(info[keyIndex], str) and (not isinstance(info[valueIndex], str)):
-                    keys.add(info[keyIndex])
+                    if info[keyIndex] not in keys:
+                        keys.append(info[keyIndex])
                 else:
                     return
-        
+
         print(keys)
 
         curveIndex = 1
@@ -80,12 +81,15 @@ class VisualLogPlot:
             if len(lineInfos) == 0:
                 continue
 
-            # 单个数组
+            # 单个数组，每组key对应的值取第一个，防止重复
             plotY = []
-            for info in lineInfos:
-                if info[keyIndex] in keys:
-                    plotY.append(info[valueIndex])
-            
+            for key in keys:
+                for info in lineInfos:
+                    if info[keyIndex] == key:
+                        plotY.append(info[valueIndex])
+
+                        break
+
             # print(plotY)
             for item_index in range(len(plotY)):
                 # 画点
@@ -97,11 +101,11 @@ class VisualLogPlot:
 
             curveIndex += 1
             plotYs.append(plotY)
-        
+
         # 写文字
         for item_index in range(len(keys)):
             ax.text(item_index, plotY[item_index] + 1, list(keys)[item_index], fontsize=7, rotation=90)
-        
+
         if len(plotYs) == 2:
             # 计算差分，画差分
             diffY = []
@@ -207,8 +211,8 @@ class VisualLogPlot:
 
     def parseData(filePath, regex):
         print("parseData")
-        
+
         return LogParser.logFileParser(
             filePath,
-            regex.split("\n")
+            regex
         )

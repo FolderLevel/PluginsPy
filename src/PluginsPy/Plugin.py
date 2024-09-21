@@ -126,12 +126,13 @@ class Plugin:
 
         self.lineInfosOfFiles = []
 
-        regexArray = self.ui.PSRegexPlainTextEdit.toPlainText().strip()
+        regexArray = self.ui.PSRegexPlainTextEdit.toPlainText().strip().splitlines()
         print(regexArray)
 
         if os.path.exists("output"):
             self.config.setKeyValues(self.getVisualLogData())
-            self.config.setKeyValue("regex", regexArray)
+            self.config.setKeyValue("pluginIndex", self.ui.PSPluginsComboBox.currentIndex())
+            self.config.setKeyValue("regex", "\n".join(regexArray))
             self.config.saveConfig()
 
         if len(regexArray) > 0:
@@ -165,7 +166,6 @@ class Plugin:
             parseFiles = []
             for key in keyValues.keys():
                 if "\\" in keyValues[key] or "/" in keyValues[key]:
-                    print(regexArray)
                     print(key + " -> " + keyValues[key])
 
                     if os.path.exists(keyValues[key]):

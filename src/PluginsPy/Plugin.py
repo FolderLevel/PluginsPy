@@ -18,6 +18,7 @@ from PyQt5.QtWidgets import *
 class Plugin:
 
     PlotType = ["normal", "key"]
+    RegexTemplate = ["null", "logcat", "kernel"]
 
     def __init__(self, ui: Ui_MainWindow, MainWindow: QMainWindow):
         self.ui               = ui
@@ -33,6 +34,8 @@ class Plugin:
         ui.PSTempPushButton.clicked.connect(self.PSTempClick)
         ui.PSPlotTypeComboBox.addItems(Plugin.PlotType)
         ui.PSPlotTypeComboBox.setCurrentIndex(0)
+        ui.PSRegexTemplateComboBox.currentIndexChanged.connect(self.PSRegexTemplateChanged)
+        ui.PSRegexTemplateComboBox.addItems(Plugin.RegexTemplate)
 
         self.initPlugins()
 
@@ -40,13 +43,11 @@ class Plugin:
 
     def getPluginsIndex(self, pluginsDir="Plugins") :
 
-        dirpath = None
-        dirnames = None
-        filenames = None
-        for (dirpath, dirnames, filenames) in os.walk(pluginsDir) :
-            dirpath = dirpath
-            dirnames = dirnames
-            filenames = filenames
+        filenames = []
+        for file in os.listdir(pluginsDir):
+            full_path = os.path.join(pluginsDir, file)
+            if os.path.isfile(full_path):
+                filenames.append(file)
 
         fileIndex = 0
         for file in filenames:
@@ -135,6 +136,9 @@ class Plugin:
 
         if len(regexArray) > 0:
             keyValues = self.getKeyValues()
+            '''
+            这里每个文件调一次解析
+
             for key in keyValues.keys():
                 if "\\" in keyValues[key] or "/" in keyValues[key]:
                     print(regexArray)
@@ -155,8 +159,34 @@ class Plugin:
                         self.lineInfosOfFiles.append(lineInfos)
                     else:
                         print("can't file path:" + keyValues[key])
+            '''
+
+            # 整体调一次解析
+            parseFiles = []
+            for key in keyValues.keys():
+                if "\\" in keyValues[key] or "/" in keyValues[key]:
+                    print(regexArray)
+                    print(key + " -> " + keyValues[key])
+
+                    if os.path.exists(keyValues[key]):
+                        print(keyValues[key])
+                        # r"(\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\.\d*)\s+\d+\s+\d+\s+\w+\s+.*: In wakeup_callback: resumed from suspend"
+                        parseFiles.append(keyValues[key])
+
+                    else:
+                        print("can't file path:" + keyValues[key])
+
+            moduleString = "VisualLogPlot"
+            # import file
+            module = importlib.import_module("PluginsPy." + moduleString)
+            # get class, file list to parse
+            clazz  = getattr(module, moduleString)
+            method = getattr(clazz, "parseData")
+            print(parseFiles)
+            self.lineInfosOfFiles, filenames = method(parseFiles, regexArray)
 
         for lineInfos in self.lineInfosOfFiles:
+            print("file data: ")
             for info in lineInfos:
                 print(info)
 
@@ -259,7 +289,7 @@ class Plugin:
                     "",
                     "        " + parseFilenameArgs,
                     "        regex = [\n            '" + "',\n            '".join(regexArray) + "'\n            ]",
-                    "        kwargs[\"lineInfosFiles\"] = LogParser.logFileParser(",
+                    "        kwargs[\"lineInfosFiles\"], filenames = LogParser.logFileParser(",
                     "                parseFilenames,",
                     "                regex,",
                     "            )",
@@ -267,7 +297,13 @@ class Plugin:
                     "        plotType               = \"" + plotType + "\"",
                     "        kwargs[\"xAxis\"]      = [" + (", ".join([str(i) for i in visualLogData["xAxis"]])) + "]",
                     "        kwargs[\"dataIndex\"]  = [" + (", ".join([str(i) for i in visualLogData["dataIndex"]])) + "]",
-                    "        MatplotlibZoom.Show(callback=VisualLogPlot.defaultShowCallback, rows = 1, cols = 1, args=kwargs)",
+                    "",
+                    "        if plotType == \"normal\":",
+                    "            MatplotlibZoom.Show(callback=VisualLogPlot.defaultShowCallback, rows = 1, cols = 1, args=kwargs)",
+                    "        elif plotType == \"key\":",
+                    "            MatplotlibZoom.Show(callback=VisualLogPlot.defaultKeyShowCallback, rows = 1, cols = 1, args=kwargs)",
+                    "        else:",
+                    "            print(\"unsupport plot type\")",
                     ""
                 ]
 
@@ -479,6 +515,23 @@ class Plugin:
             return str(ret)
         else:
             return ret
+
+    def PSRegexTemplateChanged(self):
+        print("PSRegexTemplateChanged")
+        regIndex = self.ui.PSRegexTemplateComboBox.currentIndex()
+
+        if Plugin.RegexTemplate[regIndex] == "null":
+            print("null")
+            self.ui.PSRegexPlainTextEdit.setPlainText("")
+        elif Plugin.RegexTemplate[regIndex] == "logcat":
+            print("logcat")
+            self.ui.PSRegexPlainTextEdit.setPlainText("(\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\.\d*)\s+\d+\s+\d+\s+\w+\s+.*: In wakeup_callback: resumed from suspend (\d+)")
+        elif Plugin.RegexTemplate[regIndex] == "kernel":
+            print("kernel")
+            self.ui.PSRegexPlainTextEdit.setPlainText("(\d*\.\d*)\s+:.*(Kernel_init_done)\n(\d*\.\d*)\s+:.*(INIT:post-fs-data)")
+        else:
+            print("unsupport regex template")
+
 
     def PSPluginsChanged(self):
         pluginsIndex = self.ui.PSPluginsComboBox.currentIndex()

@@ -38,6 +38,32 @@ class Plugin:
 
         self.lineInfosOfFiles = []
 
+    def getPluginsIndex(self, pluginsDir="Plugins") :
+
+        dirpath = None
+        dirnames = None
+        filenames = None
+        for (dirpath, dirnames, filenames) in os.walk(pluginsDir) :
+            dirpath = dirpath
+            dirnames = dirnames
+            filenames = filenames
+
+        fileIndex = 0
+        for file in filenames:
+            if file == "__init__.py":
+                continue
+
+            moduleString = file.split(".")[0]
+            matchObj = re.match(r'\d{4}[_]?', moduleString)
+            if matchObj:
+                currentIndex = int(matchObj.group(0).replace("_", ""))
+                if currentIndex > fileIndex:
+                    fileIndex = currentIndex
+
+        print("current file index: " + str(fileIndex))
+
+        return fileIndex
+
     def getVisualLogData(self):
         data = {}
 
@@ -187,6 +213,15 @@ class Plugin:
         if len(authorName) == 0:
             authorName = os.getlogin()
 
+        clazzName = fileName
+        currentPluginIndex = self.getPluginsIndex() + 1
+        matchObj = re.match(r'\d{4}[_]?', fileName)
+        if matchObj:
+            clazzName = fileName.replace(matchObj.group(0), "").replace(".py", "")
+        else:
+            clazzName = fileName.replace(".py", "")
+            fileName = ("%04d" % currentPluginIndex) + "_" + fileName
+
         with open(relFileDir + "/" + fileName, mode="w", encoding="utf-8") as f:
             outputArray = [
                     "#!/usr/bin/env python3",
@@ -209,7 +244,7 @@ class Plugin:
                     "from matplotlib.figure import Figure",
                     "from matplotlib.axes import Axes",
                     "",
-                    "class " + fileName.replace(".py", "") + ":",
+                    "class " + clazzName + ":",
                     "",
                     "    \"\"\"",
                     moduleArgs.rstrip(),

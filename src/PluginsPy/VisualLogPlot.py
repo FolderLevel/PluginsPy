@@ -84,11 +84,24 @@ class VisualLogPlot:
             # 单个数组，每组key对应的值取第一个，防止重复
             plotY = []
             for key in keys:
+                '''
                 for info in lineInfos:
                     if info[keyIndex] == key:
                         plotY.append(info[valueIndex])
 
                         break
+                '''
+                dataLength = len(lineInfos)
+                for i in range(dataLength):
+                    info = lineInfos[i]
+                    if info[keyIndex] == key:
+                        plotY.append(info[valueIndex])
+
+                        break
+
+                    # 没找到就用前面一个填充
+                    if i == (dataLength - 1):
+                        plotY.append(plotY[-1])
 
             # print(plotY)
             for item_index in range(len(plotY)):
@@ -109,9 +122,16 @@ class VisualLogPlot:
         if len(plotYs) == 2:
             # 计算差分，画差分
             diffY = []
+            incrementY = []
             for i in range(len(keys)):
                 diffY.append(plotYs[1][i] - plotYs[0][i])
+
+                if i == 0:
+                    incrementY.append(diffY[0])
+                else:
+                    incrementY.append(diffY[i] - diffY[i - 1])
             ax.plot(range(len(keys)), diffY, label="curve diff")
+            ax.plot(range(len(keys)), incrementY, label="curve increment")
 
         ax.legend()
 

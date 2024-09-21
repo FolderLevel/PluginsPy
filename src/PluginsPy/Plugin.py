@@ -528,7 +528,7 @@ class Plugin:
             self.ui.PSRegexPlainTextEdit.setPlainText("(\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\.\d*)\s+\d+\s+\d+\s+\w+\s+.*: In wakeup_callback: resumed from suspend (\d+)")
         elif Plugin.RegexTemplate[regIndex] == "kernel":
             print("kernel")
-            self.ui.PSRegexPlainTextEdit.setPlainText("(\d*\.\d*)\s+:.*(Kernel_init_done)\n(\d*\.\d*)\s+:.*(INIT:post-fs-data)")
+            self.ui.PSRegexPlainTextEdit.setPlainText("(\d*\.\d*)\s+:.*(Kernel_init_done)\n(\d*\.\d*)\s+:.*(INIT:late-init)\n(\d*\.\d*)\s+:.*(vold:fbeEnable:START)\n(\d*\.\d*)\s+:.*(INIT:post-fs-data)")
         else:
             print("unsupport regex template")
 

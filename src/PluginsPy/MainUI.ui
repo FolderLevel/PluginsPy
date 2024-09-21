@@ -28,14 +28,34 @@
       <widget class="QComboBox" name="PSPluginsComboBox"/>
      </item>
      <item>
-      <layout class="QGridLayout" name="PSGridLayout"/>
-     </item>
-     <item>
-      <widget class="QPushButton" name="PSRunPushButton">
-       <property name="text">
-        <string>Run</string>
-       </property>
-      </widget>
+      <layout class="QHBoxLayout" name="horizontalLayout_4">
+       <item>
+        <layout class="QGridLayout" name="PSGridLayout" rowminimumheight="0" columnminimumwidth="0">
+         <property name="sizeConstraint">
+          <enum>QLayout::SetDefaultConstraint</enum>
+         </property>
+         <property name="topMargin">
+          <number>6</number>
+         </property>
+         <property name="bottomMargin">
+          <number>6</number>
+         </property>
+        </layout>
+       </item>
+       <item>
+        <widget class="QPushButton" name="PSRunPushButton">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>Run</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
      <item>
       <widget class="Line" name="line">
@@ -85,6 +105,16 @@
        </item>
        <item>
         <widget class="QLineEdit" name="PSDataIndexLineEdit"/>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_3">
+         <property name="text">
+          <string> PlotType: </string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QComboBox" name="PSPlotTypeComboBox"/>
        </item>
       </layout>
      </item>

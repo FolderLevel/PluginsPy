@@ -13,10 +13,17 @@ if "%1" == "deps"     goto deps
 echo.
 echo.usage:
 echo.	make
+echo.	make all
 echo.	make ui
 echo.	make designer
 echo.
 
+goto end
+
+:all
+del /s /q dist
+python3 setup.py sdist bdist_wheel
+for %%w in (dist\*.whl) do pip3 install %%w
 goto end
 
 :ui

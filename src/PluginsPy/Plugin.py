@@ -17,6 +17,8 @@ from PyQt5.QtWidgets import *
 
 class Plugin:
 
+    PlotType = ["normal", "key"]
+
     def __init__(self, ui: Ui_MainWindow, MainWindow: QMainWindow):
         self.ui               = ui
         self.gridLayout       = ui.PSGridLayout
@@ -29,6 +31,8 @@ class Plugin:
         ui.PSRegexPushButton.clicked.connect(self.PSRegexClick)
         ui.PSVisualLogPushButton.clicked.connect(self.PSVisualLogClick)
         ui.PSTempPushButton.clicked.connect(self.PSTempClick)
+        ui.PSPlotTypeComboBox.addItems(Plugin.PlotType)
+        ui.PSPlotTypeComboBox.setCurrentIndex(0)
 
         self.initPlugins()
 
@@ -39,6 +43,7 @@ class Plugin:
 
         data["xAxis"]     = eval("[" + self.ui.PSXAxisLineEdit.text() + "]")
         data["dataIndex"] = eval("[" + self.ui.PSDataIndexLineEdit.text() + "]")
+        data["plotType"]  = self.ui.PSPlotTypeComboBox.currentText()
 
         for i in range(len(data["xAxis"])):
             if data["xAxis"][i] < 0:
@@ -146,15 +151,18 @@ class Plugin:
         # Windows，os.getcwd path with "\"，QFileDialog get path with "/"
         relFilePath = filePath.replace(os.getcwd().replace("\\", "/"), "").replace("\\", "/")[1:]
         relFileDir = os.path.dirname(relFilePath)
-        fileName = os.path.basename(relFilePath).capitalize()
+        fileName = os.path.basename(relFilePath)
+        fileName = fileName[0].upper() + fileName[1:]
         if not fileName.endswith(".py"):
             fileName += ".py"
 
         print(relFileDir)
         print(fileName)
 
-        regexArray = self.ui.PSRegexPlainTextEdit.toPlainText().strip()
+        regexArray = self.ui.PSRegexPlainTextEdit.toPlainText().strip().replace("'", "\\'").splitlines()
         visualLogData = self.getVisualLogData()
+
+        plotType = self.ui.PSPlotTypeComboBox.currentText()
 
         keyValues = self.getKeyValues()
         moduleArgs = ""
@@ -214,16 +222,16 @@ class Plugin:
                     "",
                     clazzArgs.rstrip(),
                     "",
-                    "        regex                  = '" + regexArray + "'",
-                    "        kwargs[\"xAxis\"]      = [" + (", ".join([str(i) for i in visualLogData["xAxis"]])) + "]",
-                    "        kwargs[\"dataIndex\"]  = [" + (", ".join([str(i) for i in visualLogData["dataIndex"]])) + "]",
-                    "",
                     "        " + parseFilenameArgs,
+                    "        regex = [\n            '" + "',\n            '".join(regexArray) + "'\n            ]",
                     "        kwargs[\"lineInfosFiles\"] = LogParser.logFileParser(",
                     "                parseFilenames,",
                     "                regex,",
                     "            )",
                     "",
+                    "        plotType               = \"" + plotType + "\"",
+                    "        kwargs[\"xAxis\"]      = [" + (", ".join([str(i) for i in visualLogData["xAxis"]])) + "]",
+                    "        kwargs[\"dataIndex\"]  = [" + (", ".join([str(i) for i in visualLogData["dataIndex"]])) + "]",
                     "        MatplotlibZoom.Show(callback=VisualLogPlot.defaultShowCallback, rows = 1, cols = 1, args=kwargs)",
                     ""
                 ]
@@ -282,34 +290,43 @@ class Plugin:
         if "pluginIndex" in configData.keys() and configData["pluginIndex"] < len(self.plugins.values()):
             self.ui.PSPluginsComboBox.setCurrentIndex(configData["pluginIndex"])
 
+        if "plotType" in configData.keys():
+            self.ui.PSPlotTypeComboBox.setCurrentText(configData["plotType"])
+
     def fillePSGridLayout(self, gridLayout: QGridLayout, keyValues: dict):
-        if len(keyValues) == 0:
-            return
-
         i = 0
-        for key in keyValues.keys():
-            label = QLabel(key)
-            if isinstance(keyValues[key], str):
-                value = QLineEdit(keyValues[key])
-                gridLayout.addWidget(label, i, 0, 1, 1)
-                gridLayout.addWidget(value, i, 1, 1, 1)
+        if len(keyValues) == 0:
+            '''
+            blank labels just to take up space
+            '''
+            label = QLabel("")
+            value = QLabel("")
+            gridLayout.addWidget(label, i, 0, 1, 1)
+            gridLayout.addWidget(value, i, 1, 1, 1)
+        else:
+            for key in keyValues.keys():
+                label = QLabel(key)
+                if isinstance(keyValues[key], str):
+                    value = QLineEdit(keyValues[key])
+                    gridLayout.addWidget(label, i, 0, 1, 1)
+                    gridLayout.addWidget(value, i, 1, 1, 1)
 
-                if "/" in keyValues[key] or "\\" in keyValues[key]:
-                    button = QPushButton("Select File ...")
-                    button.clicked.connect(self.PSPluginsArgsClicked)
-                    gridLayout.addWidget(button, i, 2, 1, 1)
-            else:
-                value = QComboBox()
-                comboxValue = (list)(keyValues[key][1])
-                value.addItems(comboxValue)
+                    if "/" in keyValues[key] or "\\" in keyValues[key]:
+                        button = QPushButton("Select File ...")
+                        button.clicked.connect(self.PSPluginsArgsClicked)
+                        gridLayout.addWidget(button, i, 2, 1, 1)
+                else:
+                    value = QComboBox()
+                    comboxValue = (list)(keyValues[key][1])
+                    value.addItems(comboxValue)
 
-                gridLayout.addWidget(label, i, 0, 1, 1)
-                gridLayout.addWidget(value, i, 1, 1, 1)
+                    gridLayout.addWidget(label, i, 0, 1, 1)
+                    gridLayout.addWidget(value, i, 1, 1, 1)
 
-                value.currentIndexChanged.connect(self.PSArgsComboxChanged)
-                value.setCurrentIndex(comboxValue.index(keyValues[key][0]))
+                    value.currentIndexChanged.connect(self.PSArgsComboxChanged)
+                    value.setCurrentIndex(comboxValue.index(keyValues[key][0]))
 
-            i += 1
+                i += 1
 
     def PSPluginsArgsClicked(self):
         print("PSPluginsClicked")
@@ -383,17 +400,19 @@ class Plugin:
                 continue
 
             key = self.ui.PSGridLayout.itemAtPosition(i, 0).widget().text()
-            valueWidget = self.ui.PSGridLayout.itemAtPosition(i, 1).widget()
-            if isinstance(valueWidget, QLineEdit):
-                value = valueWidget.text()
-                if not os.path.exists(value):
-                    if "/" in value or "\\" in value:
-                        print("can't find: " + value)
-                        value = os.getcwd() + "/" + value
-            elif isinstance(valueWidget, QComboBox):
-                value = valueWidget.currentText()
-            
-            keyValues[key] = value
+            # skip blank labels just to take up space
+            if len(key) != 0:
+                valueWidget = self.ui.PSGridLayout.itemAtPosition(i, 1).widget()
+                if isinstance(valueWidget, QLineEdit):
+                    value = valueWidget.text()
+                    if not os.path.exists(value):
+                        if "/" in value or "\\" in value:
+                            print("can't find: " + value)
+                            value = os.getcwd() + "/" + value
+                elif isinstance(valueWidget, QComboBox):
+                    value = valueWidget.currentText()
+                
+                keyValues[key] = value
 
         print(keyValues)
 

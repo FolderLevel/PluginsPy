@@ -21,17 +21,23 @@ class VisualLogPlot:
 
         # 清理matplotlib相关绘图，防止出现未知异常报错
         plot.close()
-
-        MatplotlibZoom.Show(callback=VisualLogPlot.defaultShowCallback, rows = 1, cols = 1, args=kwargs)
+        if kwargs["plotType"] == "normal":
+            MatplotlibZoom.Show(callback=VisualLogPlot.defaultShowCallback, rows = 1, cols = 1, args=kwargs)
+        elif kwargs["plotType"] == "key":
+            print("comming soon...")
+        else:
+            print("unsupport plot type")
 
     @classmethod
     def defaultShowCallback(clz, fig: Figure, index, args):
         """
+        默认绘图方式
+
         args:
 
         {
-            'xAxis': [0],
-            'dataIndex': [1],
+            'xAxis': [0],               # x轴，支持int/float/datetime
+            'dataIndex': [1],           # y轴，支持init/float/str
             'lineInfosFiles': [
                 [file data],
                 [file data]

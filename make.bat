@@ -22,6 +22,7 @@ goto end
 
 :all
 del /s /q dist
+pip3 uninstall -y PluginsPy
 python3 setup.py sdist bdist_wheel
 for %%w in (dist\*.whl) do pip3 install %%w
 goto end

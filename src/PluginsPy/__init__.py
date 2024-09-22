@@ -549,9 +549,17 @@ def main():
     currentFolder = os.getcwd()
     templateFolder = os.path.join(folder, 'template')
 
+    sys.path.append(currentFolder)
+
     if len(sys.argv) == 2:
         if sys.argv[1] == "new":
             shutil.copytree(templateFolder, currentFolder, dirs_exist_ok=True)
+        elif sys.argv[1] == "qt":
+            PluginsPyQT5()
+        elif sys.argv[1] == "cmd":
+            PluginsPySelect("PluginsPy")
+        else:
+            print("unsupport cmd")
     else:
         print("USAGE:")
         print("   pluginspy new")

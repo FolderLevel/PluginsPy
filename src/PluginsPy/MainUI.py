@@ -141,7 +141,7 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "Android Log Analyze"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "PluginsPy (zengjf)"))
         self.PSRunPushButton.setText(_translate("MainWindow", "Run"))
         self.label_4.setText(_translate("MainWindow", " Regex Template: "))
         self.PSRegexLabel.setText(_translate("MainWindow", " Regex: "))

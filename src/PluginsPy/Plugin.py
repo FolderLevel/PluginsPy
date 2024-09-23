@@ -18,7 +18,6 @@ from PyQt5.QtWidgets import *
 class Plugin:
 
     PlotType = ["normal", "key"]
-    RegexTemplate = ["null", "logcat", "kernel"]
 
     def __init__(self, ui: Ui_MainWindow, MainWindow: QMainWindow):
         self.ui               = ui
@@ -34,8 +33,7 @@ class Plugin:
         ui.PSTempPushButton.clicked.connect(self.PSTempClick)
         ui.PSPlotTypeComboBox.addItems(Plugin.PlotType)
         ui.PSPlotTypeComboBox.setCurrentIndex(0)
-        ui.PSRegexTemplateComboBox.currentIndexChanged.connect(self.PSRegexTemplateChanged)
-        ui.PSRegexTemplateComboBox.addItems(Plugin.RegexTemplate)
+        ui.PSRegexSavePushButton.clicked.connect(self.PSRegexSaveClick)
 
         self.initPlugins()
 
@@ -189,6 +187,15 @@ class Plugin:
             print("file data: ")
             for info in lineInfos:
                 print(info)
+    def PSRegexSaveClick(self):
+        print("PSRegexSaveClick")
+        # if "regexTemplate" not in configData.keys():
+        if self.config.getValue("regexTemplate") != None:
+            for t in self.config.getValue("regexTemplate"):
+                if t["name"] == "current":
+                    t["value"] = self.ui.PSRegexPlainTextEdit.toPlainText().strip()
+
+                    self.config.saveConfig()
 
     def PSTempClick(self):
         print("PSTempClick")
@@ -364,6 +371,27 @@ class Plugin:
         if "plotType" in configData.keys():
             self.ui.PSPlotTypeComboBox.setCurrentText(configData["plotType"])
 
+        if "regexTemplate" not in configData.keys():
+            defaultRegexTemplat = []
+            defaultRegexTemplat.append({
+                "name": "current",
+                "value": "(\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\.\d*)\s+\d+\s+\d+\s+\w+\s+.*: in wakeup_callback: resumed from suspend (\d+)"
+                })
+            defaultRegexTemplat.append({
+                "name": "logcat",
+                "value": "(\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\.\d*)\s+\d+\s+\d+\s+\w+\s+.*: in wakeup_callback: resumed from suspend (\d+)"
+                })
+            defaultRegexTemplat.append({
+                "name": "kernel",
+                "value": "(\d*\.\d*)\s+:.*(Kernel_init_done)\n(\d*\.\d*)\s+:.*(INIT:late-init)\n(\d*\.\d*)\s+:.*(vold:fbeEnable:START)\n(\d*\.\d*)\s+:.*(INIT:post-fs-data)"
+                })
+
+            configData["regexTemplate"] = defaultRegexTemplat
+            self.config.saveConfig()
+
+        self.ui.PSRegexTemplateComboBox.addItems([item["name"] for item in configData["regexTemplate"]])
+        self.ui.PSRegexTemplateComboBox.currentIndexChanged.connect(self.PSRegexTemplateChanged)
+
     def fillePSGridLayout(self, gridLayout: QGridLayout, keyValues: dict):
         i = 0
         if len(keyValues) == 0:
@@ -518,20 +546,13 @@ class Plugin:
 
     def PSRegexTemplateChanged(self):
         print("PSRegexTemplateChanged")
-        regIndex = self.ui.PSRegexTemplateComboBox.currentIndex()
+        regText = self.ui.PSRegexTemplateComboBox.currentText()
 
-        if Plugin.RegexTemplate[regIndex] == "null":
-            print("null")
-            self.ui.PSRegexPlainTextEdit.setPlainText("")
-        elif Plugin.RegexTemplate[regIndex] == "logcat":
-            print("logcat")
-            self.ui.PSRegexPlainTextEdit.setPlainText("(\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\.\d*)\s+\d+\s+\d+\s+\w+\s+.*: In wakeup_callback: resumed from suspend (\d+)")
-        elif Plugin.RegexTemplate[regIndex] == "kernel":
-            print("kernel")
-            self.ui.PSRegexPlainTextEdit.setPlainText("(\d*\.\d*)\s+:.*(Kernel_init_done)\n(\d*\.\d*)\s+:.*(INIT:late-init)\n(\d*\.\d*)\s+:.*(vold:fbeEnable:START)\n(\d*\.\d*)\s+:.*(INIT:post-fs-data)")
-        else:
-            print("unsupport regex template")
+        for t in self.config.getValue("regexTemplate"):
+            if t["name"] == regText:
+                self.ui.PSRegexPlainTextEdit.setPlainText(t["value"])
 
+                break
 
     def PSPluginsChanged(self):
         pluginsIndex = self.ui.PSPluginsComboBox.currentIndex()

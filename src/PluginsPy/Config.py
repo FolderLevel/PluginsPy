@@ -30,6 +30,12 @@ class Config:
     def setKeyValue(self, key, value):
         self.keyValues[key] = value
 
+    def getValue(self, key):
+        if key in self.keyValues.keys():
+            return self.keyValues[key]
+        else:
+            return None
+
     def setKeyValues(self, keyValues: dict):
         saveConfig = dict(keyValues)
         for key in saveConfig:

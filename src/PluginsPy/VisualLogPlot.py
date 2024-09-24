@@ -95,7 +95,15 @@ class VisualLogPlot:
                 for i in range(dataLength):
                     info = lineInfos[i]
                     if info[keyIndex] == key:
-                        plotY.append(info[valueIndex])
+                        if (isinstance(info[valueIndex], datetime.datetime)):
+                            dateInfo: datetime.datetime = info[valueIndex]
+                            if i == 0:
+                                plotY.append(0.0)
+                            else:
+                                plotY.append(dateInfo.timestamp() - lineInfos[0][valueIndex].timestamp())
+
+                        else:
+                            plotY.append(info[valueIndex])
 
                         break
 
@@ -103,7 +111,7 @@ class VisualLogPlot:
                     if i == (dataLength - 1):
                         plotY.append(plotY[-1])
 
-            # print(plotY)
+            print(plotY)
             for item_index in range(len(plotY)):
                 # 画点
                 ax.plot(item_index, plotY[item_index], 'o')

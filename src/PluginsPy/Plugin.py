@@ -33,7 +33,9 @@ class Plugin:
         ui.PSTempPushButton.clicked.connect(self.PSTempClick)
         ui.PSPlotTypeComboBox.addItems(Plugin.PlotType)
         ui.PSPlotTypeComboBox.setCurrentIndex(0)
-        ui.PSRegexSavePushButton.clicked.connect(self.PSRegexSaveClick)
+        ui.PSSavePlotArgsPushButton.clicked.connect(self.PSSavePlotArgsClick)
+        ui.PSRegexAddPushButton.clicked.connect(self.PSRegexAddClick)
+        ui.PSRegexDelPushButton.clicked.connect(self.PSRegexDeleteClick)
 
         self.initPlugins()
 
@@ -127,12 +129,6 @@ class Plugin:
         regexArray = self.ui.PSRegexPlainTextEdit.toPlainText().strip().splitlines()
         print(regexArray)
 
-        if os.path.exists("output"):
-            self.config.setKeyValues(self.getVisualLogData())
-            self.config.setKeyValue("pluginIndex", self.ui.PSPluginsComboBox.currentIndex())
-            self.config.setKeyValue("regex", "\n".join(regexArray))
-            self.config.saveConfig()
-
         if len(regexArray) > 0:
             keyValues = self.getKeyValues()
             '''
@@ -187,15 +183,82 @@ class Plugin:
             print("file data: ")
             for info in lineInfos:
                 print(info)
-    def PSRegexSaveClick(self):
-        print("PSRegexSaveClick")
+
+    def PSRegexAddClick(self):
+        print("PSRegexAddClick")
+        name, ok=QInputDialog.getText(self.MainWindow, 'Text Input Dialog', 'regex name:', QLineEdit.Normal)
+
+        if name in ["current", "logcat", "kernel"]:
+            print("skip " + name)
+            return
+
+        if ok:
+            regex = self.ui.PSRegexPlainTextEdit.toPlainText().strip()
+            regexTemplate = self.config.getValue("regexTemplate")
+            modify = False
+
+            for item in regexTemplate:
+                if item["name"] == name:
+                    item["value"] = regex
+
+                    modify = True
+
+            if not modify:
+                regexTemplate.append({"name": name, "value": regex})
+
+            self.config.saveConfig()
+
+            self.ui.PSRegexTemplateComboBox.currentIndexChanged.disconnect()
+            self.ui.PSRegexTemplateComboBox.clear()
+            self.ui.PSRegexTemplateComboBox.addItems([item["name"] for item in regexTemplate])
+            self.ui.PSRegexTemplateComboBox.currentIndexChanged.connect(self.PSRegexTemplateChanged)
+
+    def PSRegexDeleteClick(self):
+        print("PSRegexDeleteClick")
+        ret = QMessageBox.warning(self.MainWindow, "warning", "checkk to delete", QMessageBox.Yes | QMessageBox.No)
+        if ret == QMessageBox.Yes:
+            name = self.ui.PSRegexTemplateComboBox.currentText()
+
+            if name in ["current", "logcat", "kernel"]:
+                print("skip " + name)
+                return
+
+            regexTemplate: list = self.config.getValue("regexTemplate")
+            deleteItem = None
+
+            for item in regexTemplate:
+                if item["name"] == name:
+                    deleteItem = item
+
+            if deleteItem != None:
+                regexTemplate.remove(deleteItem)
+
+            self.config.saveConfig()
+
+            self.ui.PSRegexTemplateComboBox.currentIndexChanged.disconnect()
+            self.ui.PSRegexTemplateComboBox.clear()
+            self.ui.PSRegexTemplateComboBox.addItems([item["name"] for item in regexTemplate])
+            self.ui.PSRegexTemplateComboBox.currentIndexChanged.connect(self.PSRegexTemplateChanged)
+
+    def PSSavePlotArgsClick(self):
+        print("PSSavePlotArgsClick")
+
+        if not os.path.exists("output"):
+            print("can't find output dir, skip save config")
+            return
+
         # if "regexTemplate" not in configData.keys():
         if self.config.getValue("regexTemplate") != None:
             for t in self.config.getValue("regexTemplate"):
                 if t["name"] == "current":
                     t["value"] = self.ui.PSRegexPlainTextEdit.toPlainText().strip()
 
-                    self.config.saveConfig()
+        regexArray = self.ui.PSRegexPlainTextEdit.toPlainText().strip().splitlines()
+
+        self.config.setKeyValues(self.getVisualLogData())
+        self.config.setKeyValue("pluginIndex", self.ui.PSPluginsComboBox.currentIndex())
+        self.config.setKeyValue("regex", "\n".join(regexArray))
+        self.config.saveConfig()
 
     def PSTempClick(self):
         print("PSTempClick")

@@ -91,35 +91,38 @@ class Plugin:
 
         self.visualLogData = self.getVisualLogData()
 
-        moduleString = "VisualLogPlot"
-        args = self.visualLogData
-        args["lineInfosFiles"] = self.lineInfosOfFiles
+        try:
+            moduleString = "VisualLogPlot"
+            args = self.visualLogData
+            args["lineInfosFiles"] = self.lineInfosOfFiles
 
-        # import file
-        module = importlib.import_module("PluginsPy." + moduleString)
-        # get class
-        clazz  = getattr(module, moduleString)
-        # new class
-        obj = clazz(args)
+            # import file
+            module = importlib.import_module("PluginsPy." + moduleString)
+            # get class
+            clazz  = getattr(module, moduleString)
+            # new class
+            obj = clazz(args)
 
-        ret = None
-        invert_op = getattr(obj, "start", None)
-        if callable(invert_op):
-            print(">>> enter plugin start method")
-            if len(inspect.signature(invert_op).parameters) > 0:
-                ret = invert_op(args)
+            ret = None
+            invert_op = getattr(obj, "start", None)
+            if callable(invert_op):
+                print(">>> enter plugin start method")
+                if len(inspect.signature(invert_op).parameters) > 0:
+                    ret = invert_op(args)
+                else:
+                    ret = invert_op()
+                print("<<< end plugin start method")
+
+            if ret == None:
+                return ""
+            elif isinstance(ret, list):
+                return "\n".join(ret)
+            elif isinstance(ret, int) or isinstance(ret, float):
+                return str(ret)
             else:
-                ret = invert_op()
-            print("<<< end plugin start method")
-
-        if ret == None:
-            return ""
-        elif isinstance(ret, list):
-            return "\n".join(ret)
-        elif isinstance(ret, int) or isinstance(ret, float):
-            return str(ret)
-        else:
-            return ret
+                return ret
+        except Exception as e:
+            print(e)
 
     def PSRegexClick(self):
         print("PSRegexClick")
@@ -170,14 +173,17 @@ class Plugin:
                     else:
                         print("can't file path:" + keyValues[key])
 
-            moduleString = "VisualLogPlot"
-            # import file
-            module = importlib.import_module("PluginsPy." + moduleString)
-            # get class, file list to parse
-            clazz  = getattr(module, moduleString)
-            method = getattr(clazz, "parseData")
-            print(parseFiles)
-            self.lineInfosOfFiles, filenames = method(parseFiles, regexArray)
+            try:
+                moduleString = "VisualLogPlot"
+                # import file
+                module = importlib.import_module("PluginsPy." + moduleString)
+                # get class, file list to parse
+                clazz  = getattr(module, moduleString)
+                method = getattr(clazz, "parseData")
+                print(parseFiles)
+                self.lineInfosOfFiles, filenames = method(parseFiles, regexArray)
+            except Exception as e:
+                print(e)
 
         for lineInfos in self.lineInfosOfFiles:
             print("file data: ")
@@ -513,47 +519,52 @@ class Plugin:
         return (-1, -1)
 
     def getClazzArgs(self, moduleString):
-        # import file
-        module   = importlib.import_module("Plugins." + self.plugins[moduleString])
-        # get class
-        clazz    = getattr(module, moduleString)
-        # get class doc
-        clazzDoc = clazz.__doc__
-
-        # 从类注释中获取类参数及参数说明，格式@argument: argument doc
         keyValues = {}
-        keyValueSelect = []
-        if clazzDoc != None:
-            for arg in clazzDoc.split("\n"):
-                keyValue = arg.strip().split(":")
-                if len(keyValue) == 2 and keyValue[0].strip().startswith("@"):
-                    if "|" in keyValue[1]:
-                        for item in keyValue[1].strip().split("|"):
-                            if len(item.strip()) != 0:
-                                keyValueSelect.append(item.strip())
 
-                    key = keyValue[0].strip().replace("@", "")
-                    matchObj     = re.match(r'(.*)\((.*)\)', key)
-                    if matchObj:
-                        keyValue = matchObj.groups()
+        try:
+            # import file
+            module   = importlib.import_module("Plugins." + self.plugins[moduleString])
+            # get class
+            clazz    = getattr(module, moduleString)
+            # get class doc
+            clazzDoc = clazz.__doc__
 
-                        if len(keyValueSelect) != 0:
-                            keyValues[keyValue[0]] = [keyValue[1], keyValueSelect]
-                        else:
-                            keyValues[keyValue[0]] = keyValue[1]
+            # 从类注释中获取类参数及参数说明，格式@argument: argument doc
+            keyValueSelect = []
+            if clazzDoc != None:
+                for arg in clazzDoc.split("\n"):
+                    keyValue = arg.strip().split(":")
+                    if len(keyValue) == 2 and keyValue[0].strip().startswith("@"):
+                        if "|" in keyValue[1]:
+                            for item in keyValue[1].strip().split("|"):
+                                if len(item.strip()) != 0:
+                                    keyValueSelect.append(item.strip())
+
+                        key = keyValue[0].strip().replace("@", "")
+                        matchObj     = re.match(r'(.*)\((.*)\)', key)
+                        if matchObj:
+                            keyValue = matchObj.groups()
+
+                            if len(keyValueSelect) != 0:
+                                keyValues[keyValue[0]] = [keyValue[1], keyValueSelect]
+                            else:
+                                keyValues[keyValue[0]] = keyValue[1]
+        except Exception as e:
+            print(e)
+
         return keyValues
 
     def PSRunClick(self):
         print("PSRunClick")
+
+        self.config.setKeyValue("pluginIndex", self.ui.PSPluginsComboBox.currentIndex())
+        self.config.saveConfig()
 
         keyValues = self.getKeyValues()
         ret = self.getClazzWithRun(self.pluginsKeys[self.ui.PSPluginsComboBox.currentIndex()], keyValues)
 
         if len(ret) > 0:
             self.ui.PSInfoPlainTextEdit.setPlainText(ret)
-
-        self.config.setKeyValue("pluginIndex", self.ui.PSPluginsComboBox.currentIndex())
-        self.config.saveConfig()
 
     def getKeyValues(self):
         keyValues = {}
@@ -581,22 +592,26 @@ class Plugin:
         return keyValues
 
     def getClazzWithRun(self, moduleString, args):
-        # import file
-        module = importlib.import_module("Plugins." + self.plugins[moduleString])
-        # get class
-        clazz  = getattr(module, moduleString)
-        # new class
-        obj = clazz(args)
-
         ret = None
-        invert_op = getattr(obj, "start", None)
-        if callable(invert_op):
-            print(">>> enter plugin start method")
-            if len(inspect.signature(invert_op).parameters) > 0:
-                ret = invert_op(args)
-            else:
-                ret = invert_op()
-            print("<<< end plugin start method")
+
+        try:
+            # import file
+            module = importlib.import_module("Plugins." + self.plugins[moduleString])
+            # get class
+            clazz  = getattr(module, moduleString)
+            # new class
+            obj = clazz(args)
+
+            invert_op = getattr(obj, "start", None)
+            if callable(invert_op):
+                print(">>> enter plugin start method")
+                if len(inspect.signature(invert_op).parameters) > 0:
+                    ret = invert_op(args)
+                else:
+                    ret = invert_op()
+                print("<<< end plugin start method")
+        except Exception as e:
+            print(e)
 
         if ret == None:
             return ""

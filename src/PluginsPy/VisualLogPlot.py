@@ -25,8 +25,105 @@ class VisualLogPlot:
             MatplotlibZoom.Show(callback=VisualLogPlot.defaultShowCallback, rows = 1, cols = 1, args=kwargs)
         elif kwargs["plotType"] == "key":
             MatplotlibZoom.Show(callback=VisualLogPlot.defaultKeyShowCallback, rows = 1, cols = 1, args=kwargs)
+        elif kwargs["plotType"] == "keyLoop":
+            MatplotlibZoom.Show(callback=VisualLogPlot.defaultKeyLoopShowCallback, rows = 1, cols = 1, args=kwargs)
         else:
             print("unsupport plot type")
+
+    @classmethod
+    def defaultKeyLoopShowCallback(clz, fig: Figure, index, args):
+        '''
+        目前只支持单文件数据循环绘制
+
+        xAxis: 需要是字符串索引，只取第一个
+        dataIndex: 需要时float索引，只取第一个
+        '''
+
+        ax: Axes = fig.get_axes()[index]
+        ax.set_xlabel("X")
+        ax.set_ylabel("Y")
+
+        visualLogData = args
+
+        if len(args["lineInfosFiles"]) != 1:
+            return
+
+        if len(visualLogData["xAxis"]) == 0 or len(visualLogData["dataIndex"]) == 0:
+            print("please set x,y index")
+
+            return
+
+        # get keys
+        keys = []
+        keyIndex = visualLogData["xAxis"][0]
+        valueIndex = visualLogData["dataIndex"][0]
+
+        print(keyIndex)
+        print(valueIndex)
+        print(args["lineInfosFiles"])
+        # 迭代文件
+        for lineInfos in args["lineInfosFiles"]:
+            if len(lineInfos) == 0:
+                continue
+
+            # 单个数组
+            for info in lineInfos:
+                if isinstance(info[keyIndex], str) and (not isinstance(info[valueIndex], str)):
+                    if info[keyIndex] not in keys:
+                        keys.append(info[keyIndex])
+                else:
+                    return
+
+        print(keys)
+
+        curveIndex = 1
+        plotY = None
+        plotYs = []
+        for lineInfos in args["lineInfosFiles"]:
+            if len(lineInfos) == 0:
+                continue
+
+            # 单个数组，每组key对应的值取第一个，防止重复
+            plotY = []
+            relativeI = 0
+            dataLength = len(lineInfos)
+            for i in range(dataLength):
+                info = lineInfos[i]
+                if info[keyIndex] == keys[0]:
+                    plotY = []
+                    relativeI = i
+
+                if info[keyIndex] in keys:
+                    if (isinstance(info[valueIndex], datetime.datetime)):
+                        dateInfo: datetime.datetime = info[valueIndex]
+                        if len(plotY) == 0:
+                            plotY.append(0.0)
+                        else:
+                            plotY.append(dateInfo.timestamp() - lineInfos[relativeI][valueIndex].timestamp())
+
+                    else:
+                        plotY.append(info[valueIndex] - lineInfos[relativeI][valueIndex])
+
+                if info[keyIndex] == keys[-1]:
+                    plotYs.append(plotY)
+
+            print(plotYs)
+            for i in range(len(plotYs)):
+                for item_index in range(len(plotYs[i])):
+                    # 画点
+                    ax.plot(item_index, plotYs[i][item_index], 'o')
+                    # 画垂线
+                    ax.plot([item_index, item_index], [0, plotYs[i][item_index]], color="gray")
+                # 画连线
+                ax.plot(range(len(plotYs[i])), plotYs[i], label="curve " + str(curveIndex))
+
+            curveIndex += 1
+
+        # 写文字
+        for item_index in range(len(keys)):
+            ax.text(item_index, plotYs[0][item_index] + 1, list(keys)[item_index], fontsize=7, rotation=90)
+
+        ax.legend()
 
     @classmethod
     def defaultKeyShowCallback(clz, fig: Figure, index, args):

@@ -17,7 +17,7 @@ from PyQt5.QtWidgets import *
 
 class Plugin:
 
-    PlotType = ["normal", "key"]
+    PlotType = ["normal", "key", "keyLoop"]
 
     def __init__(self, ui: Ui_MainWindow, MainWindow: QMainWindow):
         self.ui               = ui
@@ -378,6 +378,8 @@ class Plugin:
                     "            MatplotlibZoom.Show(callback=VisualLogPlot.defaultShowCallback, rows = 1, cols = 1, args=kwargs)",
                     "        elif plotType == \"key\":",
                     "            MatplotlibZoom.Show(callback=VisualLogPlot.defaultKeyShowCallback, rows = 1, cols = 1, args=kwargs)",
+                    "        elif plotType == \"keyLoop\":",
+                    "            MatplotlibZoom.Show(callback=VisualLogPlot.defaultKeyLoopShowCallback, rows = 1, cols = 1, args=kwargs)",
                     "        else:",
                     "            print(\"unsupport plot type\")",
                     ""

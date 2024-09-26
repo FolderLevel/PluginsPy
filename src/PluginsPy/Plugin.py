@@ -12,6 +12,8 @@ from PluginsPy.MainUI import *
 from PluginsPy.Config import Config
 from PluginsPy.PluginProcess import PluginProcess
 
+import VisualLog.LogParser as LogParser
+
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
@@ -135,30 +137,6 @@ class Plugin:
 
         if len(regexArray) > 0:
             keyValues = self.getKeyValues()
-            '''
-            这里每个文件调一次解析
-
-            for key in keyValues.keys():
-                if "\\" in keyValues[key] or "/" in keyValues[key]:
-                    print(regexArray)
-                    print(key + " -> " + keyValues[key])
-
-                    if os.path.exists(keyValues[key]):
-                        print(keyValues[key])
-                        # r"(\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\.\d*)\s+\d+\s+\d+\s+\w+\s+.*: In wakeup_callback: resumed from suspend"
-
-                        moduleString = "VisualLogPlot"
-                        # import file
-                        module = importlib.import_module("PluginsPy." + moduleString)
-                        # get class, file list to parse
-                        clazz  = getattr(module, moduleString)
-                        method = getattr(clazz, "parseData")
-                        lineInfos, filenames = method(keyValues[key], regexArray)
-
-                        self.lineInfosOfFiles.append(lineInfos)
-                    else:
-                        print("can't file path:" + keyValues[key])
-            '''
 
             # 整体调一次解析
             parseFiles = []
@@ -173,16 +151,10 @@ class Plugin:
 
                     else:
                         print("can't file path:" + keyValues[key])
+            print(parseFiles)
 
             try:
-                moduleString = "VisualLogPlot"
-                # import file
-                module = importlib.import_module("PluginsPy." + moduleString)
-                # get class, file list to parse
-                clazz  = getattr(module, moduleString)
-                method = getattr(clazz, "parseData")
-                print(parseFiles)
-                self.lineInfosOfFiles, filenames = method(parseFiles, regexArray)
+                self.lineInfosOfFiles, filenames = LogParser.logFileParser(parseFiles, regexArray)
             except Exception as e:
                 print(e)
 

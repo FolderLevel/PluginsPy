@@ -7,6 +7,7 @@ import inspect
 import json
 from datetime import datetime
 import subprocess
+import threading
 
 from PluginsPy.MainUI import *
 from PluginsPy.Config import Config
@@ -27,6 +28,7 @@ class Plugin:
         self.gridLayout       = ui.PSGridLayout
         self.MainWindow       = MainWindow
         self.config           = Config()
+        self.currentThread: threading.Thread = None
 
         # Plugins
         ui.PSPluginsComboBox.currentIndexChanged.connect(self.PSPluginsChanged)
@@ -99,31 +101,11 @@ class Plugin:
             args = self.visualLogData
             args["lineInfosFiles"] = self.lineInfosOfFiles
 
-            # import file
-            module = importlib.import_module("PluginsPy." + moduleString)
-            # get class
-            clazz  = getattr(module, moduleString)
-            # new class
-            obj = clazz(args)
-
-            ret = None
-            invert_op = getattr(obj, "start", None)
-            if callable(invert_op):
-                print(">>> enter plugin start method")
-                if len(inspect.signature(invert_op).parameters) > 0:
-                    ret = invert_op(args)
-                else:
-                    ret = invert_op()
-                print("<<< end plugin start method")
-
-            if ret == None:
-                return ""
-            elif isinstance(ret, list):
-                return "\n".join(ret)
-            elif isinstance(ret, int) or isinstance(ret, float):
-                return str(ret)
+            if self.currentThread != None and self.currentThread.is_alive():
+                print("please close current matplotlib ui")
             else:
-                return ret
+                self.currentThread = PluginProcess(moduleString, args)
+                self.currentThread.start()
         except Exception as e:
             print(e)
 
@@ -532,16 +514,15 @@ class Plugin:
     def PSRunClick(self):
         print("PSRunClick")
 
-        self.config.setKeyValue("pluginIndex", self.ui.PSPluginsComboBox.currentIndex())
-        self.config.saveConfig()
+        if self.currentThread != None and self.currentThread.is_alive():
+            print("please close current matplotlib ui")
+        else:
+            self.config.setKeyValue("pluginIndex", self.ui.PSPluginsComboBox.currentIndex())
+            self.config.saveConfig()
 
-        keyValues = self.getKeyValues()
-        ret = self.getClazzWithRun(self.pluginsKeys[self.ui.PSPluginsComboBox.currentIndex()], keyValues)
-
-        if len(ret) > 0:
-            self.ui.PSInfoPlainTextEdit.setPlainText(ret)
-
-        PluginProcess({"status": "run"}).start()
+            keyValues = self.getKeyValues()
+            self.currentThread = PluginProcess(self.plugins[self.pluginsKeys[self.ui.PSPluginsComboBox.currentIndex()]], keyValues)
+            self.currentThread.start()
 
     def getKeyValues(self):
         keyValues = {}

@@ -10,6 +10,7 @@ import subprocess
 
 from PluginsPy.MainUI import *
 from PluginsPy.Config import Config
+from PluginsPy.PluginProcess import PluginProcess
 
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
@@ -567,6 +568,8 @@ class Plugin:
 
         if len(ret) > 0:
             self.ui.PSInfoPlainTextEdit.setPlainText(ret)
+
+        PluginProcess({"status": "run"}).start()
 
     def getKeyValues(self):
         keyValues = {}

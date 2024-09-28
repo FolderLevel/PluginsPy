@@ -40,4 +40,8 @@ class Config:
         saveConfig = dict(keyValues)
         for key in saveConfig:
             self.keyValues[key] = saveConfig[key]
+
+    def replaceKeyValues(self, target: dict, src: dict):
+        for key in src.keys():
+            target[key] = src[key]
  

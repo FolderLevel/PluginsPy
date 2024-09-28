@@ -46,7 +46,7 @@ class VisualLogPlot:
         visualLogData = args
 
         if len(args["lineInfosFiles"]) != 1:
-            return
+            print("just deal with first data list")
 
         if len(visualLogData["xAxis"]) == 0 or len(visualLogData["dataIndex"]) == 0:
             print("please set x,y index")
@@ -62,60 +62,60 @@ class VisualLogPlot:
         print(valueIndex)
         print(args["lineInfosFiles"])
         # 迭代文件
-        for lineInfos in args["lineInfosFiles"]:
-            if len(lineInfos) == 0:
-                continue
+        lineInfos = visualLogData["lineInfosFiles"][0]
+        if len(lineInfos) == 0:
+            print("data length is 0")
+            return
 
-            # 单个数组
-            for info in lineInfos:
-                if isinstance(info[keyIndex], str) and (not isinstance(info[valueIndex], str)):
-                    if info[keyIndex] not in keys:
-                        keys.append(info[keyIndex])
-                else:
-                    return
+        # 单个数组
+        for info in lineInfos:
+            print(info)
+            if isinstance(info[keyIndex], str) and (not isinstance(info[valueIndex], str)):
+                if info[keyIndex] not in keys:
+                    keys.append(info[keyIndex])
+            else:
+                return
 
         print(keys)
 
         curveIndex = 1
         plotY = None
         plotYs = []
-        for lineInfos in args["lineInfosFiles"]:
-            if len(lineInfos) == 0:
-                continue
+        lineInfos = visualLogData["lineInfosFiles"][0]
 
-            # 单个数组，每组key对应的值取第一个，防止重复
-            plotY = []
-            relativeI = 0
-            dataLength = len(lineInfos)
-            for i in range(dataLength):
-                info = lineInfos[i]
-                if info[keyIndex] == keys[0]:
-                    plotY = []
-                    relativeI = i
+        # 单个数组，每组key对应的值取第一个，防止重复
+        plotY = []
+        relativeI = 0
+        dataLength = len(lineInfos)
+        for i in range(dataLength):
+            info = lineInfos[i]
+            if info[keyIndex] == keys[0]:
+                plotY = []
+                relativeI = i
 
-                if info[keyIndex] in keys:
-                    if (isinstance(info[valueIndex], datetime.datetime)):
-                        dateInfo: datetime.datetime = info[valueIndex]
-                        if len(plotY) == 0:
-                            plotY.append(0.0)
-                        else:
-                            plotY.append(dateInfo.timestamp() - lineInfos[relativeI][valueIndex].timestamp())
-
+            if info[keyIndex] in keys:
+                if (isinstance(info[valueIndex], datetime.datetime)):
+                    dateInfo: datetime.datetime = info[valueIndex]
+                    if len(plotY) == 0:
+                        plotY.append(0.0)
                     else:
-                        plotY.append(info[valueIndex] - lineInfos[relativeI][valueIndex])
+                        plotY.append(dateInfo.timestamp() - lineInfos[relativeI][valueIndex].timestamp())
 
-                if info[keyIndex] == keys[-1]:
-                    plotYs.append(plotY)
+                else:
+                    plotY.append(info[valueIndex] - lineInfos[relativeI][valueIndex])
 
-            print(plotYs)
-            for i in range(len(plotYs)):
-                for item_index in range(len(plotYs[i])):
-                    # 画点
-                    ax.plot(item_index, plotYs[i][item_index], 'o')
-                    # 画垂线
-                    ax.plot([item_index, item_index], [0, plotYs[i][item_index]], color="gray")
-                # 画连线
-                ax.plot(range(len(plotYs[i])), plotYs[i], label="curve " + str(curveIndex))
+            if info[keyIndex] == keys[-1]:
+                plotYs.append(plotY)
+
+        print(plotYs)
+        for i in range(len(plotYs)):
+            for item_index in range(len(plotYs[i])):
+                # 画点
+                ax.plot(item_index, plotYs[i][item_index], 'o')
+                # 画垂线
+                ax.plot([item_index, item_index], [0, plotYs[i][item_index]], color="gray")
+            # 画连线
+            ax.plot(range(len(plotYs[i])), plotYs[i], label="curve " + str(curveIndex))
 
             curveIndex += 1
 

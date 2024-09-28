@@ -154,18 +154,20 @@ class Plugin:
             return
 
         if ok:
-            regex = self.ui.PSRegexPlainTextEdit.toPlainText().strip()
             regexTemplate = self.config.getValue("regexTemplate")
             modify = False
 
             for item in regexTemplate:
                 if item["name"] == name:
-                    item["value"] = regex
+                    self.config.replaceKeyValues(item, self.getCurrentTemplateConfigData())
 
                     modify = True
 
             if not modify:
-                regexTemplate.append({"name": name, "value": regex})
+                t = self.getCurrentTemplateConfigData()
+                t["name"] = name
+
+                regexTemplate.append(t)
 
             self.config.saveConfig()
 
@@ -201,6 +203,12 @@ class Plugin:
             self.ui.PSRegexTemplateComboBox.addItems([item["name"] for item in regexTemplate])
             self.ui.PSRegexTemplateComboBox.currentIndexChanged.connect(self.PSRegexTemplateChanged)
 
+    def getCurrentTemplateConfigData(self):
+        t = self.getVisualLogData()
+        t["regex"] = self.ui.PSRegexPlainTextEdit.toPlainText().strip()
+
+        return t
+
     def PSSavePlotArgsClick(self):
         print("PSSavePlotArgsClick")
 
@@ -212,13 +220,9 @@ class Plugin:
         if self.config.getValue("regexTemplate") != None:
             for t in self.config.getValue("regexTemplate"):
                 if t["name"] == "current":
-                    t["value"] = self.ui.PSRegexPlainTextEdit.toPlainText().strip()
+                    self.config.replaceKeyValues(t, self.getCurrentTemplateConfigData())
 
-        regexArray = self.ui.PSRegexPlainTextEdit.toPlainText().strip().splitlines()
-
-        self.config.setKeyValues(self.getVisualLogData())
         self.config.setKeyValue("pluginIndex", self.ui.PSPluginsComboBox.currentIndex())
-        self.config.setKeyValue("regex", "\n".join(regexArray))
         self.config.saveConfig()
 
     def PSTempClick(self):
@@ -376,40 +380,38 @@ class Plugin:
     def setSavedConfig(self):
         configData = self.config.keyValues
 
-        if "regex" in configData.keys():
-            self.ui.PSRegexPlainTextEdit.setPlainText(configData["regex"])
-        else:
-            self.ui.PSRegexPlainTextEdit.setPlainText("(\\d{2}-\\d{2}\\s+\\d{2}:\\d{2}:\\d{2}\\.\\d*)\\s+\\d+\\s+\\d+\\s+\\w+\\s+.*: In wakeup_callback: resumed from suspend (\\d+)")
-
-        if "xAxis" in configData.keys():
-            self.ui.PSXAxisLineEdit.setText(",".join([str(i) for i in configData["xAxis"]]))
-        else:
-            self.ui.PSXAxisLineEdit.setText("0")
-
-        if "dataIndex" in configData.keys():
-            self.ui.PSDataIndexLineEdit.setText(",".join([str(i) for i in configData["dataIndex"]]))
-        else:
-            self.ui.PSDataIndexLineEdit.setText("0, 1")
-
         if "pluginIndex" in configData.keys() and configData["pluginIndex"] < len(self.plugins.values()):
             self.ui.PSPluginsComboBox.setCurrentIndex(configData["pluginIndex"])
-
-        if "plotType" in configData.keys():
-            self.ui.PSPlotTypeComboBox.setCurrentText(configData["plotType"])
 
         if "regexTemplate" not in configData.keys():
             defaultRegexTemplat = []
             defaultRegexTemplat.append({
                 "name": "current",
-                "value": "(\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\.\d*)\s+\d+\s+\d+\s+\w+\s+.*: in wakeup_callback: resumed from suspend (\d+)"
+                "regex": "(\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\.\d*)\s+\d+\s+\d+\s+\w+\s+.*: in wakeup_callback: resumed from suspend (\d+)",
+                "xAxis": [0],
+                "dataIndex": [0, 1],
+                "plotType": "normal"
                 })
             defaultRegexTemplat.append({
                 "name": "logcat",
-                "value": "(\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\.\d*)\s+\d+\s+\d+\s+\w+\s+.*: in wakeup_callback: resumed from suspend (\d+)"
+                "regex": "(\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\.\d*)\s+\d+\s+\d+\s+\w+\s+.*: in wakeup_callback: resumed from suspend (\d+)",
+                "xAxis": [0],
+                "dataIndex": [0, 1],
+                "plotType": "normal"
                 })
             defaultRegexTemplat.append({
-                "name": "kernel",
-                "value": "(\d*\.\d*)\s+:.*(Kernel_init_done)\n(\d*\.\d*)\s+:.*(INIT:late-init)\n(\d*\.\d*)\s+:.*(vold:fbeEnable:START)\n(\d*\.\d*)\s+:.*(INIT:post-fs-data)"
+                "name": "key",
+                "regex": "(\d*\.\d*)\s+:.*(Kernel_init_done)\n(\d*\.\d*)\s+:.*(INIT:late-init)\n(\d*\.\d*)\s+:.*(vold:fbeEnable:START)\n(\d*\.\d*)\s+:.*(INIT:post-fs-data)",
+                "xAxis": [1],
+                "dataIndex": [0],
+                "plotType": "key"
+                })
+            defaultRegexTemplat.append({
+                "name": "keyLoop",
+                "regex": "(\d*\.\d*)\s+:.*(Kernel_init_done)\n(\d*\.\d*)\s+:.*(INIT:late-init)\n(\d*\.\d*)\s+:.*(vold:fbeEnable:START)\n(\d*\.\d*)\s+:.*(INIT:post-fs-data)",
+                "xAxis": [1],
+                "dataIndex": [0],
+                "plotType": "keyLoop"
                 })
 
             configData["regexTemplate"] = defaultRegexTemplat
@@ -417,6 +419,31 @@ class Plugin:
 
         self.ui.PSRegexTemplateComboBox.addItems([item["name"] for item in configData["regexTemplate"]])
         self.ui.PSRegexTemplateComboBox.currentIndexChanged.connect(self.PSRegexTemplateChanged)
+
+        configData = None
+        for t in self.config.getValue("regexTemplate"):
+            if t["name"] == "current":
+                configData = t
+
+        if configData != None:
+
+            if "regex" in configData.keys():
+                self.ui.PSRegexPlainTextEdit.setPlainText(configData["regex"])
+            else:
+                self.ui.PSRegexPlainTextEdit.setPlainText("(\\d{2}-\\d{2}\\s+\\d{2}:\\d{2}:\\d{2}\\.\\d*)\\s+\\d+\\s+\\d+\\s+\\w+\\s+.*: In wakeup_callback: resumed from suspend (\\d+)")
+
+            if "xAxis" in configData.keys():
+                self.ui.PSXAxisLineEdit.setText(",".join([str(i) for i in configData["xAxis"]]))
+            else:
+                self.ui.PSXAxisLineEdit.setText("0")
+
+            if "dataIndex" in configData.keys():
+                self.ui.PSDataIndexLineEdit.setText(",".join([str(i) for i in configData["dataIndex"]]))
+            else:
+                self.ui.PSDataIndexLineEdit.setText("0, 1")
+
+            if "plotType" in configData.keys():
+                self.ui.PSPlotTypeComboBox.setCurrentText(configData["plotType"])
 
     def fillePSGridLayout(self, gridLayout: QGridLayout, keyValues: dict):
         i = 0
@@ -586,7 +613,17 @@ class Plugin:
 
         for t in self.config.getValue("regexTemplate"):
             if t["name"] == regText:
-                self.ui.PSRegexPlainTextEdit.setPlainText(t["value"])
+                for key in t.keys():
+                    if key == "name":
+                        continue
+                    if key == "value" or key == "regex":
+                        self.ui.PSRegexPlainTextEdit.setPlainText(t[key])
+                    if key == "xAxis":
+                        self.ui.PSXAxisLineEdit.setText(", ".join([str(i) for i in t[key]]))
+                    if key == "dataIndex":
+                        self.ui.PSDataIndexLineEdit.setText(", ".join([str(i) for i in t[key]]))
+                    if key == "plotType":
+                        self.ui.PSPlotTypeComboBox.setCurrentText(t[key])
 
                 break
 

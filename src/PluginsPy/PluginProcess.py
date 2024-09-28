@@ -3,6 +3,7 @@ import multiprocessing
 import importlib
 import inspect
 import re
+import traceback
 
 def getClazzWithRun(moduleString, **args):
     ret = None
@@ -35,6 +36,7 @@ def getClazzWithRun(moduleString, **args):
             print("<<< end plugin start method")
     except Exception as e:
         print(e)
+        traceback.print_exc()
 
     if ret == None:
         return ""

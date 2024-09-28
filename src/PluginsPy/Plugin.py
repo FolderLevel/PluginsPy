@@ -46,6 +46,13 @@ class Plugin:
 
         self.lineInfosOfFiles = []
 
+        self.MainWindow.closeEvent = self.closeCallback
+
+    def closeCallback(self, event):
+        print("closeCallback")
+
+        self.config.saveConfig()
+
     def getPluginsIndex(self, pluginsDir="Plugins") :
 
         filenames = []
@@ -329,7 +336,7 @@ class Plugin:
                     "                regex,",
                     "            )",
                     "",
-                    "        plotType               = \"" + plotType + "\"",
+                    "        plotType             = \"" + plotType + "\"",
                     "        kwargs[\"xAxis\"]      = [" + (", ".join([str(i) for i in visualLogData["xAxis"]])) + "]",
                     "        kwargs[\"dataIndex\"]  = [" + (", ".join([str(i) for i in visualLogData["dataIndex"]])) + "]",
                     "",
@@ -369,11 +376,10 @@ class Plugin:
                 self.firstPlugin = moduleString
  
         self.pluginsKeys = list(self.plugins.keys())
-        # self.ui.PSPluginsComboBox.addItems(self.pluginsKeys)
+        self.ui.PSPluginsComboBox.blockSignals(True)
         self.ui.PSPluginsComboBox.clear()
         self.ui.PSPluginsComboBox.addItems(self.plugins.values())
-        # 下面这句会导致重复加载界面
-        # self.fillePSGridLayout(self.ui.PSGridLayout, self.getClazzArgs(self.firstPlugin))
+        self.ui.PSPluginsComboBox.blockSignals(False)
 
         self.setSavedConfig()
 
@@ -484,7 +490,11 @@ class Plugin:
         print("PSPluginsClicked")
         row, col = self.findWidgetPosition(self.ui.PSGridLayout)
 
-        fileName,fileType = QFileDialog.getOpenFileName(None, "select file", os.getcwd(), "All Files(*);;Text Files(*.txt)")
+        if self.config.getValue("selectFileDir") == None or not os.path.exists(self.config.getValue("selectFileDir")):
+            self.config.setKeyValue("selectFileDir", os.getcwd())
+            self.config.saveConfig()
+
+        fileName, fileType = QFileDialog.getOpenFileName(None, "select file", self.config.getValue("selectFileDir"), "All Files(*);;Text Files(*.txt)")
         if (len(fileName) > 0):
             print(fileName)
             print(fileType)
@@ -492,6 +502,7 @@ class Plugin:
             edit: QLineEdit = self.ui.PSGridLayout.itemAtPosition(row, col - 1).widget()
             edit.setText(fileName)
 
+            self.config.setKeyValue("selectFileDir", os.path.dirname(fileName))
 
     def findWidgetPosition(self, gridLayout):
         print("row, col: " + str(gridLayout.rowCount()) + ", " + str(gridLayout.columnCount()))

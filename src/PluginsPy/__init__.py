@@ -563,6 +563,8 @@ def main():
     else:
         print("USAGE:")
         print("   pluginspy new")
+        print("   pluginspy qt")
+        print("   pluginspy cmd")
         print("")
 
 if __name__ == "__main__" :

@@ -6,7 +6,7 @@ REM Command file for ALogAnalyze
 
 if "%1" == ""         goto all
 if "%1" == "all"      goto all
-if "%1" == "qt"       goto qt
+if "%1" == "cmd"      goto cmd
 
 echo.
 echo.usage:
@@ -18,11 +18,11 @@ echo.
 goto end
 
 :all
-python3 main.py
+python3 main.py qt
 goto end
 
-:qt
-python3 main.py qt
+:cmd
+python3 main.py
 goto end
 
 :end

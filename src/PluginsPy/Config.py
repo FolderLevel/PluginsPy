@@ -4,10 +4,58 @@ import os
 import json
 
 class Config:
+    Version = "0.0.1"
+    PlotType = ["normal", "key", "keyLoop", "3D"]
 
     def __init__(self):
         self.configPath = 'output/visualLogConfig.txt'
         self.keyValues = self.loadConfig()
+
+        if "version" not in self.keyValues.keys() or self.keyValues["version"] != Config.Version:
+            self.keyValues = {"version": Config.Version}
+
+        if "regexTemplate" not in self.keyValues.keys():
+            defaultRegexTemplat = []
+            defaultRegexTemplat.append({
+                "name": "current",
+                "regex": "(\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\.\d*)\s+\d+\s+\d+\s+\w+\s+.*: in wakeup_callback: resumed from suspend (\d+)",
+                "xAxis": [0],
+                "dataIndex": [0, 1],
+                "plotType": "normal"
+                })
+            defaultRegexTemplat.append({
+                "name": "logcat",
+                "regex": "(\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\.\d*)\s+\d+\s+\d+\s+\w+\s+.*: in wakeup_callback: resumed from suspend (\d+)",
+                "xAxis": [0],
+                "dataIndex": [0, 1],
+                "plotType": "normal"
+                })
+            defaultRegexTemplat.append({
+                "name": "key",
+                "regex": "(\d*\.\d*)\s+:.*(Kernel_init_done)\n(\d*\.\d*)\s+:.*(INIT:late-init)\n(\d*\.\d*)\s+:.*(vold:fbeEnable:START)\n(\d*\.\d*)\s+:.*(INIT:post-fs-data)",
+                "xAxis": [1],
+                "dataIndex": [0],
+                "plotType": "key"
+                })
+            defaultRegexTemplat.append({
+                "name": "keyLoop",
+                "regex": "(\d*\.\d*)\s+:.*(Kernel_init_done)\n(\d*\.\d*)\s+:.*(INIT:late-init)\n(\d*\.\d*)\s+:.*(vold:fbeEnable:START)\n(\d*\.\d*)\s+:.*(INIT:post-fs-data)",
+                "xAxis": [1],
+                "dataIndex": [0],
+                "plotType": "keyLoop"
+                })
+
+            defaultRegexTemplat.append({
+                "name": "3D",
+                "regex": "x\s*=\s*([-]?\d.\d+),\s*y\s*=\s*([-]?\d.\d+),\s*z\s*=\s*([-]?\d.\d+)",
+                "xAxis": [0],
+                "dataIndex": [0, 1, 2],
+                "plotType": "3D"
+                })
+
+            self.keyValues["regexTemplate"] = defaultRegexTemplat
+
+        self.saveConfig()
 
     def loadConfig(self):
         if not os.path.exists("output"):

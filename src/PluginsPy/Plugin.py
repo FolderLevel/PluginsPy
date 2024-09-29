@@ -21,8 +21,6 @@ from PyQt5.QtWidgets import *
 
 class Plugin:
 
-    PlotType = ["normal", "key", "keyLoop"]
-
     def __init__(self, ui: Ui_MainWindow, MainWindow: QMainWindow):
         self.ui               = ui
         self.gridLayout       = ui.PSGridLayout
@@ -36,7 +34,7 @@ class Plugin:
         ui.PSRegexPushButton.clicked.connect(self.PSRegexClick)
         ui.PSVisualLogPushButton.clicked.connect(self.PSVisualLogClick)
         ui.PSTempPushButton.clicked.connect(self.PSTempClick)
-        ui.PSPlotTypeComboBox.addItems(Plugin.PlotType)
+        ui.PSPlotTypeComboBox.addItems(Config.PlotType)
         ui.PSPlotTypeComboBox.setCurrentIndex(0)
         ui.PSSavePlotArgsPushButton.clicked.connect(self.PSSavePlotArgsClick)
         ui.PSRegexAddPushButton.clicked.connect(self.PSRegexAddClick)
@@ -324,7 +322,7 @@ class Plugin:
                     "",
                     "    def __init__(self, kwargs):",
                     "",
-                    "        print(\"" + fileName.replace(".py", "") + " args:\")",
+                    "        print(\"" + clazzName + " args:\")",
                     "        print(kwargs)",
                     "",
                     clazzArgs.rstrip(),
@@ -346,6 +344,8 @@ class Plugin:
                     "            MatplotlibZoom.Show(callback=VisualLogPlot.defaultKeyShowCallback, rows = 1, cols = 1, args=kwargs)",
                     "        elif plotType == \"keyLoop\":",
                     "            MatplotlibZoom.Show(callback=VisualLogPlot.defaultKeyLoopShowCallback, rows = 1, cols = 1, args=kwargs)",
+                    "        elif plotType == \"3D\":",
+                    "            MatplotlibZoom.Show(callback=VisualLogPlot.default3DShowCallback, rows = 1, cols = 1, d3=True, args=kwargs)",
                     "        else:",
                     "            print(\"unsupport plot type\")",
                     ""
@@ -388,40 +388,6 @@ class Plugin:
 
         if "pluginIndex" in configData.keys() and configData["pluginIndex"] < len(self.plugins.values()):
             self.ui.PSPluginsComboBox.setCurrentIndex(configData["pluginIndex"])
-
-        if "regexTemplate" not in configData.keys():
-            defaultRegexTemplat = []
-            defaultRegexTemplat.append({
-                "name": "current",
-                "regex": "(\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\.\d*)\s+\d+\s+\d+\s+\w+\s+.*: in wakeup_callback: resumed from suspend (\d+)",
-                "xAxis": [0],
-                "dataIndex": [0, 1],
-                "plotType": "normal"
-                })
-            defaultRegexTemplat.append({
-                "name": "logcat",
-                "regex": "(\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\.\d*)\s+\d+\s+\d+\s+\w+\s+.*: in wakeup_callback: resumed from suspend (\d+)",
-                "xAxis": [0],
-                "dataIndex": [0, 1],
-                "plotType": "normal"
-                })
-            defaultRegexTemplat.append({
-                "name": "key",
-                "regex": "(\d*\.\d*)\s+:.*(Kernel_init_done)\n(\d*\.\d*)\s+:.*(INIT:late-init)\n(\d*\.\d*)\s+:.*(vold:fbeEnable:START)\n(\d*\.\d*)\s+:.*(INIT:post-fs-data)",
-                "xAxis": [1],
-                "dataIndex": [0],
-                "plotType": "key"
-                })
-            defaultRegexTemplat.append({
-                "name": "keyLoop",
-                "regex": "(\d*\.\d*)\s+:.*(Kernel_init_done)\n(\d*\.\d*)\s+:.*(INIT:late-init)\n(\d*\.\d*)\s+:.*(vold:fbeEnable:START)\n(\d*\.\d*)\s+:.*(INIT:post-fs-data)",
-                "xAxis": [1],
-                "dataIndex": [0],
-                "plotType": "keyLoop"
-                })
-
-            configData["regexTemplate"] = defaultRegexTemplat
-            self.config.saveConfig()
 
         self.ui.PSRegexTemplateComboBox.addItems([item["name"] for item in configData["regexTemplate"]])
         self.ui.PSRegexTemplateComboBox.currentIndexChanged.connect(self.PSRegexTemplateChanged)

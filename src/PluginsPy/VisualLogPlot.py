@@ -8,6 +8,7 @@ import VisualLog.MatplotlibZoom as MatplotlibZoom
 import matplotlib.pyplot as plot
 from matplotlib.figure import Figure
 from matplotlib.axes import Axes
+from mpl_toolkits.mplot3d.axes3d import Axes3D
 
 class VisualLogPlot:
     """
@@ -27,8 +28,57 @@ class VisualLogPlot:
             MatplotlibZoom.Show(callback=VisualLogPlot.defaultKeyShowCallback, rows = 1, cols = 1, args=kwargs)
         elif kwargs["plotType"] == "keyLoop":
             MatplotlibZoom.Show(callback=VisualLogPlot.defaultKeyLoopShowCallback, rows = 1, cols = 1, args=kwargs)
+        elif kwargs["plotType"] == "3D":
+            MatplotlibZoom.Show(callback=VisualLogPlot.default3DShowCallback, rows = 1, cols = 1, d3=True, args=kwargs)
         else:
             print("unsupport plot type")
+
+    @classmethod
+    def default3DShowCallback(clz, fig: Figure, index, args):
+        if len(args) <= 0:
+            return
+
+        visualLogData = args
+
+        if len(visualLogData["lineInfosFiles"]) == 0:
+            print("no data to plot")
+            return
+        lineInfos = visualLogData["lineInfosFiles"][0]
+
+        dataIndex = visualLogData["dataIndex"]
+        if len(dataIndex) != 3:
+            print("please check data index length")
+            return
+        x = dataIndex[0]
+        y = dataIndex[1]
+        z = dataIndex[2]
+
+        ax: Axes3D = fig.get_axes()[index]
+
+        # ax = plt.axes(projection='3d')
+        ax.set_xlabel('x-axis')
+        ax.set_ylabel('y-axis')
+        ax.set_zlabel('z-axis')
+        ax.view_init(elev=45, azim=45)
+
+        # ValueError: data type must provide an itemsize
+        # 输入的数据是字符串导致，需要整形、浮点型数据
+        # 
+        # b: blue
+        # c: cyan
+        # g: green
+        # k: black
+        # m: magenta
+        # r: red
+        # w: white
+        # y: yellow
+
+        # start point
+        ax.scatter3D(lineInfos[0][x], lineInfos[0][y], lineInfos[0][z], c=['b'])
+        # second pointer with other
+        ax.scatter3D([s[x] for s in lineInfos[1:]], [s[y] for s in lineInfos[1:]], [s[z] for s in lineInfos[1:]], c=['r'])
+        # line
+        ax.plot3D([s[x] for s in lineInfos], [s[y] for s in lineInfos], [s[z] for s in lineInfos], 'gray')
 
     @classmethod
     def defaultKeyLoopShowCallback(clz, fig: Figure, index, args):

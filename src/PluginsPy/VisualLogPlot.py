@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 import datetime
+import difflib
+import re
 
 import VisualLog.LogParser as LogParser
 import VisualLog.MatplotlibZoom as MatplotlibZoom
@@ -28,6 +30,8 @@ class VisualLogPlot:
             MatplotlibZoom.Show(callback=VisualLogPlot.defaultKeyShowCallback, rows = 1, cols = 1, args=kwargs)
         elif kwargs["plotType"] == "keyLoop":
             MatplotlibZoom.Show(callback=VisualLogPlot.defaultKeyLoopShowCallback, rows = 1, cols = 1, args=kwargs)
+        elif kwargs["plotType"] == "keyDiff":
+            MatplotlibZoom.Show(callback=VisualLogPlot.defaultKeyDiffShowCallback, rows = 1, cols = 1, args=kwargs)
         elif kwargs["plotType"] == "3D":
             MatplotlibZoom.Show(callback=VisualLogPlot.default3DShowCallback, rows = 1, cols = 1, d3=True, args=kwargs)
         else:
@@ -172,6 +176,168 @@ class VisualLogPlot:
         # 写文字
         for item_index in range(len(keys)):
             ax.text(item_index, plotYs[0][item_index] + 1, list(keys)[item_index], fontsize=7, rotation=90)
+
+        ax.legend()
+
+    @classmethod
+    def defaultKeyDiffShowCallback(clz, fig: Figure, index, args):
+        '''
+        目前只支持两条曲线绘制对比
+
+        xAxis: 需要是字符串索引，只取第一个
+        dataIndex: 需要时float索引，只取第一个
+        '''
+
+        ax: Axes = fig.get_axes()[index]
+        ax.set_xlabel("X")
+        ax.set_ylabel("Y")
+
+        visualLogData = args
+
+        if len(args["lineInfosFiles"]) == 0:
+            return
+
+        if len(visualLogData["xAxis"]) == 0 or len(visualLogData["dataIndex"]) == 0:
+            print("please set x,y index")
+
+            return
+
+        # get keys
+        keys = []
+        keysDiff = []
+        keyIndex = visualLogData["xAxis"][0]
+        valueIndex = visualLogData["dataIndex"][0]
+
+        print(keyIndex)
+        print(valueIndex)
+        print(args["lineInfosFiles"])
+        # 迭代文件
+        for lineInfos in args["lineInfosFiles"]:
+            if len(lineInfos) == 0:
+                continue
+
+            # 单个数组
+            keysTmp = []
+            for info in lineInfos:
+                if isinstance(info[keyIndex], str) and (not isinstance(info[valueIndex], str)):
+                    keysTmp.append(info[keyIndex])
+                else:
+                    return
+            keysDiff.append(keysTmp)
+
+        print(keysDiff)
+        diff = difflib.Differ()
+        for key in list(diff.compare(keysDiff[0], keysDiff[1])):
+
+            matchObj = re.match(r'^([\+\- ]) ', key, re.M | re.I)
+            if matchObj:
+                print(key)
+
+                match = matchObj.group(1)
+                if match == " ":
+                    print("normal")
+                    keys.append(key.strip())
+                elif match == "+":
+                    print("add")
+                elif match == "-":
+                    print("del")
+                else:
+                    print("not found")
+        print(keys)
+
+        curveIndex = 1
+        plotY = None
+        plotYs = []
+        for lineInfos in args["lineInfosFiles"]:
+            if len(lineInfos) == 0:
+                continue
+
+            # 单个数组，每组key对应的值取第一个，防止重复
+            plotY = []
+            for key in keys:
+                '''
+                key相同，但是出现的时间不同
+                '''
+                if keys.count(key) == 1:
+                    dataLength = len(lineInfos)
+                    for i in range(dataLength):
+                        info = lineInfos[i]
+                        if info[keyIndex] == key:
+                            if (isinstance(info[valueIndex], datetime.datetime)):
+                                dateInfo: datetime.datetime = info[valueIndex]
+                                if i == 0:
+                                    plotY.append(0.0)
+                                else:
+                                    plotY.append(dateInfo.timestamp() - lineInfos[0][valueIndex].timestamp())
+
+                            else:
+                                plotY.append(info[valueIndex])
+
+                            break
+
+                        # 没找到就用前面一个填充
+                        if i == (dataLength - 1):
+                            plotY.append(plotY[-1])
+                else:
+                    keysIndex = 0
+                    keysIndexTmp = 0
+                    # 确认当前需要查找的重复的key的第几个，然后去数组中找第几个
+                    for keyTmp in keys:
+                        if key == keyTmp:
+                            if (key is keyTmp):
+                                break
+                            else:
+                                keysIndex += 1
+
+                    print(key + " count: " + str(keys.count(key)) + " index: " + str(keysIndex))
+                    dataLength = len(lineInfos)
+                    for i in range(dataLength):
+                        info = lineInfos[i]
+                        if info[keyIndex] == key:
+                            if keysIndex == keysIndexTmp:
+                                if (isinstance(info[valueIndex], datetime.datetime)):
+                                    dateInfo: datetime.datetime = info[valueIndex]
+                                    if i == 0:
+                                        plotY.append(0.0)
+                                    else:
+                                        plotY.append(dateInfo.timestamp() - lineInfos[0][valueIndex].timestamp())
+
+                                else:
+                                    plotY.append(info[valueIndex])
+
+                                break
+
+                            keysIndexTmp += 1
+
+            print(plotY)
+            for item_index in range(len(plotY)):
+                # 画点
+                ax.plot(item_index, plotY[item_index], 'o')
+                # 画垂线
+                ax.plot([item_index, item_index], [0, plotY[item_index]], color="gray")
+            # 画连线
+            ax.plot(range(len(plotY)), plotY, label="curve " + str(curveIndex))
+
+            curveIndex += 1
+            plotYs.append(plotY)
+
+        # 写文字
+        for item_index in range(len(keys)):
+            ax.text(item_index, plotY[item_index] + 1, list(keys)[item_index], fontsize=7, rotation=90)
+
+        if len(plotYs) == 2:
+            # 计算差分，画差分
+            diffY = []
+            incrementY = []
+            for i in range(len(keys)):
+                diffY.append(plotYs[1][i] - plotYs[0][i])
+
+                if i == 0:
+                    incrementY.append(diffY[0])
+                else:
+                    incrementY.append(diffY[i] - diffY[i - 1])
+            ax.plot(range(len(keys)), diffY, label="curve diff")
+            ax.plot(range(len(keys)), incrementY, label="curve increment")
 
         ax.legend()
 

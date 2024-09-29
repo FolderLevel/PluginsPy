@@ -344,6 +344,8 @@ class Plugin:
                     "            MatplotlibZoom.Show(callback=VisualLogPlot.defaultKeyShowCallback, rows = 1, cols = 1, args=kwargs)",
                     "        elif plotType == \"keyLoop\":",
                     "            MatplotlibZoom.Show(callback=VisualLogPlot.defaultKeyLoopShowCallback, rows = 1, cols = 1, args=kwargs)",
+                    "        elif plotType == \"keyDiff\":",
+                    "            MatplotlibZoom.Show(callback=VisualLogPlot.defaultKeyDiffShowCallback, rows = 1, cols = 1, args=kwargs)",
                     "        elif plotType == \"3D\":",
                     "            MatplotlibZoom.Show(callback=VisualLogPlot.default3DShowCallback, rows = 1, cols = 1, d3=True, args=kwargs)",
                     "        else:",

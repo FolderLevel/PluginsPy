@@ -1,6 +1,7 @@
       2432.721005 :    1-swapper/0       : Kernel_init_done
       3509.536777 :  383-init            : INIT:early-init
       4039.599163 :  383-init            : INIT:late-init
+      4040.599163 :  383-init            : INIT:late-init
       4055.317547 :  383-init            : INIT:Mount_START
       4493.803472 :  383-init            : INIT:Mount_END
       4544.496626 :  383-init            : INIT:post-fs

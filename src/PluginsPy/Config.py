@@ -5,7 +5,7 @@ import json
 
 class Config:
     Version = "0.0.1"
-    PlotType = ["normal", "key", "keyLoop", "3D"]
+    PlotType = ["normal", "key", "keyLoop", "keyDiff", "3D"]
 
     def __init__(self):
         self.configPath = 'output/visualLogConfig.txt'
@@ -44,7 +44,13 @@ class Config:
                 "dataIndex": [0],
                 "plotType": "keyLoop"
                 })
-
+            defaultRegexTemplat.append({
+                "name": "keyDiff",
+                "regex": "(\d*\.\d*)\s+:.*(Kernel_init_done)\n(\d*\.\d*)\s+:.*(INIT:late-init)\n(\d*\.\d*)\s+:.*(vold:fbeEnable:START)\n(\d*\.\d*)\s+:.*(INIT:post-fs-data)",
+                "xAxis": [1],
+                "dataIndex": [0],
+                "plotType": "keyDiff"
+                })
             defaultRegexTemplat.append({
                 "name": "3D",
                 "regex": "x\s*=\s*([-]?\d.\d+),\s*y\s*=\s*([-]?\d.\d+),\s*z\s*=\s*([-]?\d.\d+)",

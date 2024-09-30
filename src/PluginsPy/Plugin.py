@@ -12,6 +12,7 @@ import threading
 from PluginsPy.MainUI import *
 from PluginsPy.Config import Config
 from PluginsPy.PluginProcess import PluginProcess
+from PluginsPy.PluginTemplate import PluginTemplate
 
 import VisualLog.LogParser as LogParser
 
@@ -257,26 +258,7 @@ class Plugin:
 
         regexArray = self.ui.PSRegexPlainTextEdit.toPlainText().strip().replace("'", "\\'").splitlines()
         visualLogData = self.getVisualLogData()
-
         plotType = self.ui.PSPlotTypeComboBox.currentText()
-
-        keyValues = self.getKeyValues()
-        moduleArgs = ""
-        clazzArgs  = ""
-        # parseFilenameArgs = "        parseFilenames = ["
-        parseFilenameArgs = []
-        for key in keyValues.keys():
-            if "/" in keyValues[key]:
-                pathValue: str = keyValues[key]
-                if os.getcwd() in pathValue:
-                    pathValue = pathValue.replace(os.getcwd(), "").replace("\\", "/")[1:]
-
-                moduleArgs += "    @" + key + "(" + pathValue + "): None\n"
-                clazzArgs  += "        " + key + " = kwargs[\"" + key + "\"]\n"
-
-                parseFilenameArgs.append(key)
-
-        parseFilenameArgs = "parseFilenames = [" + ", ".join(parseFilenameArgs) + "]"
 
         res = subprocess.run(["git", "config", "user.name"], stdout=subprocess.PIPE)
         authorName = res.stdout.strip().decode()
@@ -292,68 +274,20 @@ class Plugin:
             clazzName = fileName.replace(".py", "")
             fileName = ("%04d" % currentPluginIndex) + "_" + fileName
 
-        with open(relFileDir + "/" + fileName, mode="w", encoding="utf-8") as f:
-            outputArray = [
-                    "#!/usr/bin/env python3",
-                    "# -*- coding: utf-8 -*-",
-                    "",
-                    "\"\"\"",
-                    "Author: " + authorName,
-                    "Date: "   + datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    "License: MIT License",
-                    "\"\"\"",
-                    "",
-                    "import datetime",
-                    "",
-                    "from PluginsPy.VisualLogPlot import VisualLogPlot",
-                    "",
-                    "import VisualLog.LogParser as LogParser",
-                    "import VisualLog.MatplotlibZoom as MatplotlibZoom",
-                    "",
-                    "import matplotlib.pyplot as plot",
-                    "from matplotlib.figure import Figure",
-                    "from matplotlib.axes import Axes",
-                    "",
-                    "class " + clazzName + ":",
-                    "",
-                    "    \"\"\"",
-                    moduleArgs.rstrip(),
-                    "    \"\"\"",
-                    "",
-                    "    def __init__(self, kwargs):",
-                    "",
-                    "        print(\"" + clazzName + " args:\")",
-                    "        print(kwargs)",
-                    "",
-                    clazzArgs.rstrip(),
-                    "",
-                    "        " + parseFilenameArgs,
-                    "        regex = [\n            '" + "',\n            '".join(regexArray) + "'\n            ]",
-                    "        kwargs[\"lineInfosFiles\"], filenames = LogParser.logFileParser(",
-                    "                parseFilenames,",
-                    "                regex,",
-                    "            )",
-                    "",
-                    "        plotType             = \"" + plotType + "\"",
-                    "        kwargs[\"xAxis\"]      = [" + (", ".join([str(i) for i in visualLogData["xAxis"]])) + "]",
-                    "        kwargs[\"dataIndex\"]  = [" + (", ".join([str(i) for i in visualLogData["dataIndex"]])) + "]",
-                    "",
-                    "        if plotType == \"normal\":",
-                    "            MatplotlibZoom.Show(callback=VisualLogPlot.defaultShowCallback, rows = 1, cols = 1, args=kwargs)",
-                    "        elif plotType == \"key\":",
-                    "            MatplotlibZoom.Show(callback=VisualLogPlot.defaultKeyShowCallback, rows = 1, cols = 1, args=kwargs)",
-                    "        elif plotType == \"keyLoop\":",
-                    "            MatplotlibZoom.Show(callback=VisualLogPlot.defaultKeyLoopShowCallback, rows = 1, cols = 1, args=kwargs)",
-                    "        elif plotType == \"keyDiff\":",
-                    "            MatplotlibZoom.Show(callback=VisualLogPlot.defaultKeyDiffShowCallback, rows = 1, cols = 1, args=kwargs)",
-                    "        elif plotType == \"3D\":",
-                    "            MatplotlibZoom.Show(callback=VisualLogPlot.default3DShowCallback, rows = 1, cols = 1, d3=True, args=kwargs)",
-                    "        else:",
-                    "            print(\"unsupport plot type\")",
-                    ""
-                ]
+        pluginDataInfo = {
+            "author": authorName,
+            "className": clazzName,
+            "regex": regexArray,
+            "plotType": plotType,
+            "xAxis": visualLogData["xAxis"],
+            "dataIndex": visualLogData["dataIndex"]
+        }
+        pt = PluginTemplate(pluginDataInfo)
+        pt.setDefaultArgs(self.getKeyValues())
+        pt.composite()
 
-            f.write("\n".join(outputArray))
+        with open(relFileDir + "/" + fileName, mode="w", encoding="utf-8") as f:
+            f.write(pt.parseTemplate())
 
         self.initPlugins()
 

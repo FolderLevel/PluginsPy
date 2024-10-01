@@ -4,8 +4,6 @@ import importlib
 import re
 import os
 import inspect
-import json
-from datetime import datetime
 import subprocess
 import threading
 
@@ -124,7 +122,7 @@ class Plugin:
         print(regexArray)
 
         if len(regexArray) > 0:
-            keyValues = self.getKeyValues()
+            keyValues = self.getPluginKeyValues()
 
             # 整体调一次解析
             parseFiles = []
@@ -283,7 +281,7 @@ class Plugin:
             "dataIndex": visualLogData["dataIndex"]
         }
         pt = PluginTemplate(pluginDataInfo)
-        pt.setDefaultArgs(self.getKeyValues())
+        pt.setDefaultArgs(self.getPluginKeyValues())
         pt.composite()
 
         with open(relFileDir + "/" + fileName, mode="w", encoding="utf-8") as f:
@@ -353,7 +351,7 @@ class Plugin:
             if "plotType" in configData.keys():
                 self.ui.PSPlotTypeComboBox.setCurrentText(configData["plotType"])
 
-    def fillePSGridLayout(self, gridLayout: QGridLayout, keyValues: dict):
+    def fillPSGridLayout(self, gridLayout: QGridLayout, keyValues: dict):
         i = 0
         if len(keyValues) == 0:
             '''
@@ -460,11 +458,11 @@ class Plugin:
             self.config.setKeyValue("pluginIndex", self.ui.PSPluginsComboBox.currentIndex())
             self.config.saveConfig()
 
-            keyValues = self.getKeyValues()
+            keyValues = self.getPluginKeyValues()
             self.currentThread = PluginProcess(self.plugins[self.pluginsKeys[self.ui.PSPluginsComboBox.currentIndex()]], keyValues)
             self.currentThread.start()
 
-    def getKeyValues(self):
+    def getPluginKeyValues(self):
         keyValues = {}
         for i in range(self.ui.PSGridLayout.rowCount()):
             if self.ui.PSGridLayout.itemAtPosition(i, 0) == None:
@@ -554,7 +552,7 @@ class Plugin:
                 item.widget().deleteLater()
 
         # fill gridlayout
-        self.fillePSGridLayout(self.ui.PSGridLayout, self.getClazzArgs(self.pluginsKeys[pluginsIndex]))
+        self.fillPSGridLayout(self.ui.PSGridLayout, self.getClazzArgs(self.pluginsKeys[pluginsIndex]))
 
         print(self.pluginsKeys[pluginsIndex])
 

@@ -323,11 +323,19 @@ class Plugin:
         if "pluginIndex" in configData.keys() and configData["pluginIndex"] < len(self.plugins.values()):
             self.ui.PSPluginsComboBox.setCurrentIndex(configData["pluginIndex"])
 
-        self.ui.PSRegexTemplateComboBox.addItems([item["name"] for item in configData["regexTemplate"]])
+        templateNames = [item["name"] for item in configData["regexTemplate"]]
+        self.ui.PSRegexTemplateComboBox.addItems(templateNames)
+        if self.config.getValue("selectRegexTemplate") in templateNames:
+            self.ui.PSRegexTemplateComboBox.setCurrentText(self.config.getValue("selectRegexTemplate"))
         self.ui.PSRegexTemplateComboBox.currentIndexChanged.connect(self.PSRegexTemplateChanged)
 
         configData = None
         for t in self.config.getValue("regexTemplate"):
+            # 没找到就用current，找到了就是当前配置中加载的
+            if t["name"] == self.config.getValue("selectRegexTemplate"):
+                configData = t
+                break
+
             if t["name"] == "current":
                 configData = t
 
@@ -455,9 +463,6 @@ class Plugin:
         if self.currentThread != None and self.currentThread.is_alive():
             print("please close current matplotlib ui")
         else:
-            self.config.setKeyValue("pluginIndex", self.ui.PSPluginsComboBox.currentIndex())
-            self.config.saveConfig()
-
             keyValues = self.getPluginKeyValues()
             self.currentThread = PluginProcess(self.plugins[self.pluginsKeys[self.ui.PSPluginsComboBox.currentIndex()]], keyValues)
             self.currentThread.start()
@@ -521,6 +526,7 @@ class Plugin:
     def PSRegexTemplateChanged(self):
         print("PSRegexTemplateChanged")
         regText = self.ui.PSRegexTemplateComboBox.currentText()
+        self.config.setKeyValue("selectRegexTemplate", regText)
 
         for t in self.config.getValue("regexTemplate"):
             if t["name"] == regText:
@@ -553,6 +559,8 @@ class Plugin:
 
         # fill gridlayout
         self.fillPSGridLayout(self.ui.PSGridLayout, self.getClazzArgs(self.pluginsKeys[pluginsIndex]))
+
+        self.config.setKeyValue("pluginIndex", self.ui.PSPluginsComboBox.currentIndex())
 
         print(self.pluginsKeys[pluginsIndex])
 

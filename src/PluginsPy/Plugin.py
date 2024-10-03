@@ -226,7 +226,6 @@ class Plugin:
                 if t["name"] == "current":
                     self.config.replaceKeyValues(t, self.getCurrentTemplateConfigData())
 
-        self.config.setKeyValue("pluginIndex", self.ui.PSPluginsComboBox.currentIndex())
         self.config.saveConfig()
 
     def PSTempClick(self):
@@ -320,8 +319,10 @@ class Plugin:
     def setSavedConfig(self):
         configData = self.config.keyValues
 
-        if "pluginIndex" in configData.keys() and configData["pluginIndex"] < len(self.plugins.values()):
+        if "pluginIndex" in configData.keys() and (configData["pluginIndex"] < len(self.plugins.values()) and configData["pluginIndex"] != 0):
             self.ui.PSPluginsComboBox.setCurrentIndex(configData["pluginIndex"])
+        else:
+            self.PSPluginsChanged()
 
         templateNames = [item["name"] for item in configData["regexTemplate"]]
         self.ui.PSRegexTemplateComboBox.addItems(templateNames)

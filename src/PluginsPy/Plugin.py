@@ -4,14 +4,13 @@ import importlib
 import re
 import os
 import inspect
-import json
-from datetime import datetime
 import subprocess
 import threading
 
 from PluginsPy.MainUI import *
 from PluginsPy.Config import Config
 from PluginsPy.PluginProcess import PluginProcess
+from PluginsPy.PluginTemplate import PluginTemplate
 
 import VisualLog.LogParser as LogParser
 
@@ -123,7 +122,7 @@ class Plugin:
         print(regexArray)
 
         if len(regexArray) > 0:
-            keyValues = self.getKeyValues()
+            keyValues = self.getPluginKeyValues()
 
             # 整体调一次解析
             parseFiles = []
@@ -227,7 +226,6 @@ class Plugin:
                 if t["name"] == "current":
                     self.config.replaceKeyValues(t, self.getCurrentTemplateConfigData())
 
-        self.config.setKeyValue("pluginIndex", self.ui.PSPluginsComboBox.currentIndex())
         self.config.saveConfig()
 
     def PSTempClick(self):
@@ -257,26 +255,7 @@ class Plugin:
 
         regexArray = self.ui.PSRegexPlainTextEdit.toPlainText().strip().replace("'", "\\'").splitlines()
         visualLogData = self.getVisualLogData()
-
         plotType = self.ui.PSPlotTypeComboBox.currentText()
-
-        keyValues = self.getKeyValues()
-        moduleArgs = ""
-        clazzArgs  = ""
-        # parseFilenameArgs = "        parseFilenames = ["
-        parseFilenameArgs = []
-        for key in keyValues.keys():
-            if "/" in keyValues[key]:
-                pathValue: str = keyValues[key]
-                if os.getcwd() in pathValue:
-                    pathValue = pathValue.replace(os.getcwd(), "").replace("\\", "/")[1:]
-
-                moduleArgs += "    @" + key + "(" + pathValue + "): None\n"
-                clazzArgs  += "        " + key + " = kwargs[\"" + key + "\"]\n"
-
-                parseFilenameArgs.append(key)
-
-        parseFilenameArgs = "parseFilenames = [" + ", ".join(parseFilenameArgs) + "]"
 
         res = subprocess.run(["git", "config", "user.name"], stdout=subprocess.PIPE)
         authorName = res.stdout.strip().decode()
@@ -292,68 +271,20 @@ class Plugin:
             clazzName = fileName.replace(".py", "")
             fileName = ("%04d" % currentPluginIndex) + "_" + fileName
 
-        with open(relFileDir + "/" + fileName, mode="w", encoding="utf-8") as f:
-            outputArray = [
-                    "#!/usr/bin/env python3",
-                    "# -*- coding: utf-8 -*-",
-                    "",
-                    "\"\"\"",
-                    "Author: " + authorName,
-                    "Date: "   + datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    "License: MIT License",
-                    "\"\"\"",
-                    "",
-                    "import datetime",
-                    "",
-                    "from PluginsPy.VisualLogPlot import VisualLogPlot",
-                    "",
-                    "import VisualLog.LogParser as LogParser",
-                    "import VisualLog.MatplotlibZoom as MatplotlibZoom",
-                    "",
-                    "import matplotlib.pyplot as plot",
-                    "from matplotlib.figure import Figure",
-                    "from matplotlib.axes import Axes",
-                    "",
-                    "class " + clazzName + ":",
-                    "",
-                    "    \"\"\"",
-                    moduleArgs.rstrip(),
-                    "    \"\"\"",
-                    "",
-                    "    def __init__(self, kwargs):",
-                    "",
-                    "        print(\"" + clazzName + " args:\")",
-                    "        print(kwargs)",
-                    "",
-                    clazzArgs.rstrip(),
-                    "",
-                    "        " + parseFilenameArgs,
-                    "        regex = [\n            '" + "',\n            '".join(regexArray) + "'\n            ]",
-                    "        kwargs[\"lineInfosFiles\"], filenames = LogParser.logFileParser(",
-                    "                parseFilenames,",
-                    "                regex,",
-                    "            )",
-                    "",
-                    "        plotType             = \"" + plotType + "\"",
-                    "        kwargs[\"xAxis\"]      = [" + (", ".join([str(i) for i in visualLogData["xAxis"]])) + "]",
-                    "        kwargs[\"dataIndex\"]  = [" + (", ".join([str(i) for i in visualLogData["dataIndex"]])) + "]",
-                    "",
-                    "        if plotType == \"normal\":",
-                    "            MatplotlibZoom.Show(callback=VisualLogPlot.defaultShowCallback, rows = 1, cols = 1, args=kwargs)",
-                    "        elif plotType == \"key\":",
-                    "            MatplotlibZoom.Show(callback=VisualLogPlot.defaultKeyShowCallback, rows = 1, cols = 1, args=kwargs)",
-                    "        elif plotType == \"keyLoop\":",
-                    "            MatplotlibZoom.Show(callback=VisualLogPlot.defaultKeyLoopShowCallback, rows = 1, cols = 1, args=kwargs)",
-                    "        elif plotType == \"keyDiff\":",
-                    "            MatplotlibZoom.Show(callback=VisualLogPlot.defaultKeyDiffShowCallback, rows = 1, cols = 1, args=kwargs)",
-                    "        elif plotType == \"3D\":",
-                    "            MatplotlibZoom.Show(callback=VisualLogPlot.default3DShowCallback, rows = 1, cols = 1, d3=True, args=kwargs)",
-                    "        else:",
-                    "            print(\"unsupport plot type\")",
-                    ""
-                ]
+        pluginDataInfo = {
+            "author": authorName,
+            "className": clazzName,
+            "regex": regexArray,
+            "plotType": plotType,
+            "xAxis": visualLogData["xAxis"],
+            "dataIndex": visualLogData["dataIndex"]
+        }
+        pt = PluginTemplate(pluginDataInfo)
+        pt.setDefaultArgs(self.getPluginKeyValues())
+        pt.composite()
 
-            f.write("\n".join(outputArray))
+        with open(relFileDir + "/" + fileName, mode="w", encoding="utf-8") as f:
+            f.write(pt.parseTemplate())
 
         self.initPlugins()
 
@@ -388,14 +319,24 @@ class Plugin:
     def setSavedConfig(self):
         configData = self.config.keyValues
 
-        if "pluginIndex" in configData.keys() and configData["pluginIndex"] < len(self.plugins.values()):
+        if "pluginIndex" in configData.keys() and (configData["pluginIndex"] < len(self.plugins.values()) and configData["pluginIndex"] != 0):
             self.ui.PSPluginsComboBox.setCurrentIndex(configData["pluginIndex"])
+        else:
+            self.PSPluginsChanged()
 
-        self.ui.PSRegexTemplateComboBox.addItems([item["name"] for item in configData["regexTemplate"]])
+        templateNames = [item["name"] for item in configData["regexTemplate"]]
+        self.ui.PSRegexTemplateComboBox.addItems(templateNames)
+        if self.config.getValue("selectRegexTemplate") in templateNames:
+            self.ui.PSRegexTemplateComboBox.setCurrentText(self.config.getValue("selectRegexTemplate"))
         self.ui.PSRegexTemplateComboBox.currentIndexChanged.connect(self.PSRegexTemplateChanged)
 
         configData = None
         for t in self.config.getValue("regexTemplate"):
+            # 没找到就用current，找到了就是当前配置中加载的
+            if t["name"] == self.config.getValue("selectRegexTemplate"):
+                configData = t
+                break
+
             if t["name"] == "current":
                 configData = t
 
@@ -419,7 +360,7 @@ class Plugin:
             if "plotType" in configData.keys():
                 self.ui.PSPlotTypeComboBox.setCurrentText(configData["plotType"])
 
-    def fillePSGridLayout(self, gridLayout: QGridLayout, keyValues: dict):
+    def fillPSGridLayout(self, gridLayout: QGridLayout, keyValues: dict):
         i = 0
         if len(keyValues) == 0:
             '''
@@ -523,14 +464,11 @@ class Plugin:
         if self.currentThread != None and self.currentThread.is_alive():
             print("please close current matplotlib ui")
         else:
-            self.config.setKeyValue("pluginIndex", self.ui.PSPluginsComboBox.currentIndex())
-            self.config.saveConfig()
-
-            keyValues = self.getKeyValues()
+            keyValues = self.getPluginKeyValues()
             self.currentThread = PluginProcess(self.plugins[self.pluginsKeys[self.ui.PSPluginsComboBox.currentIndex()]], keyValues)
             self.currentThread.start()
 
-    def getKeyValues(self):
+    def getPluginKeyValues(self):
         keyValues = {}
         for i in range(self.ui.PSGridLayout.rowCount()):
             if self.ui.PSGridLayout.itemAtPosition(i, 0) == None:
@@ -589,6 +527,7 @@ class Plugin:
     def PSRegexTemplateChanged(self):
         print("PSRegexTemplateChanged")
         regText = self.ui.PSRegexTemplateComboBox.currentText()
+        self.config.setKeyValue("selectRegexTemplate", regText)
 
         for t in self.config.getValue("regexTemplate"):
             if t["name"] == regText:
@@ -620,7 +559,9 @@ class Plugin:
                 item.widget().deleteLater()
 
         # fill gridlayout
-        self.fillePSGridLayout(self.ui.PSGridLayout, self.getClazzArgs(self.pluginsKeys[pluginsIndex]))
+        self.fillPSGridLayout(self.ui.PSGridLayout, self.getClazzArgs(self.pluginsKeys[pluginsIndex]))
+
+        self.config.setKeyValue("pluginIndex", self.ui.PSPluginsComboBox.currentIndex())
 
         print(self.pluginsKeys[pluginsIndex])
 

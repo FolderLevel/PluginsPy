@@ -1,11 +1,12 @@
-import threading
 import multiprocessing
 import importlib
 import inspect
 import re
 import traceback
+import time
+from PyQt5.QtCore import QThread
 
-def getClazzWithRun(moduleString, **args):
+def getClazzWithRun(moduleString, sender, **args):
     ret = None
     module = None
 
@@ -38,25 +39,47 @@ def getClazzWithRun(moduleString, **args):
         print(e)
         traceback.print_exc()
 
+    sendString = None
     if ret == None:
-        return ""
+        sendString = ""
     elif isinstance(ret, list):
-        return "\n".join(ret)
+        sendString = "\n".join(ret)
     elif isinstance(ret, int) or isinstance(ret, float):
-        return str(ret)
+        sendString = str(ret)
+    elif isinstance(ret, str):
+        sendString = str(ret)
     else:
-        return ret
+        sendString = ""
 
-class PluginProcess(threading.Thread):
+    sender.send(sendString)
 
-    def __init__(self, moduleString, kwargs):
+# class PluginProcess(threading.Thread):
+class PluginProcess(QThread):
+
+    def __init__(self, moduleString, kwargs, callback=None):
         super().__init__()
         self.moduleString = moduleString
         self.kwargs = kwargs
+        self.processRetString = ""
+        self.callback = callback
 
     def run(self):
         print("PluginProcess running")
 
-        p = multiprocessing.Process(target=getClazzWithRun, args=(self.moduleString,), kwargs=self.kwargs)
+        connSend, connRecv =  multiprocessing.Pipe()
+        p = multiprocessing.Process(target=getClazzWithRun, args=(self.moduleString, connSend,), kwargs=self.kwargs)
         p.start()
+
+        while p.is_alive():
+            try:
+                self.processRetString += connRecv.recv()
+            except EOFError:
+                break  # Occurs when the child connection is closed
+            time.sleep(0.1)  # To avoid busy waiting
+
+        print("Process ret: " + self.processRetString)
+
+        if self.callback != None:
+            self.callback(self.processRetString)
+
         p.join()

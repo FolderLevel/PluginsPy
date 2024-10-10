@@ -5,7 +5,6 @@ import re
 import os
 import inspect
 import subprocess
-import threading
 
 from PluginsPy.MainUI import *
 from PluginsPy.Config import Config
@@ -25,7 +24,7 @@ class Plugin:
         self.gridLayout       = ui.PSGridLayout
         self.MainWindow       = MainWindow
         self.config           = Config()
-        self.currentThread: threading.Thread = None
+        self.currentThread: QThread = None
 
         # Plugins
         ui.PSPluginsComboBox.currentIndexChanged.connect(self.PSPluginsChanged)
@@ -458,15 +457,24 @@ class Plugin:
 
         return keyValues
 
+    def updateInfo(self):
+        if (len(self.procRetData) > 0):
+            self.ui.PSInfoPlainTextEdit.setPlainText(self.procRetData)
+
+    def processRetData(self, data):
+        if (len(data) > 0):
+            self.procRetData = data
+
     def PSRunClick(self):
         print("PSRunClick")
 
-        if self.currentThread != None and self.currentThread.is_alive():
+        if self.currentThread != None and self.currentThread.isRunning():
             print("please close current matplotlib ui")
         else:
             keyValues = self.getPluginKeyValues()
-            self.currentThread = PluginProcess(self.plugins[self.pluginsKeys[self.ui.PSPluginsComboBox.currentIndex()]], keyValues)
+            self.currentThread = PluginProcess(self.plugins[self.pluginsKeys[self.ui.PSPluginsComboBox.currentIndex()]], keyValues, self.processRetData)
             self.currentThread.start()
+            self.currentThread.finished.connect(self.updateInfo)
 
     def getPluginKeyValues(self):
         keyValues = {}

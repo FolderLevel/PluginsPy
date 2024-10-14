@@ -382,6 +382,21 @@ class Plugin:
                         button.clicked.connect(self.PSPluginsArgsClicked)
                         gridLayout.addWidget(button, i, 2, 1, 1)
                 else:
+                    # {
+                    #   'name': [
+                    #     'zengaz',                 --> default value
+                    #     ['zengjf', 'zengaz']      --> list value
+                    #   ],
+                    #   'id': '123456'
+                    # }
+                    #
+                    # * key
+                    # * value
+                    #   * str
+                    #     * default value
+                    #   * list
+                    #     * [0]: default value
+                    #     * [1]: list value
                     value = QComboBox()
                     comboxValue = (list)(keyValues[key][1])
                     value.addItems(comboxValue)
@@ -433,9 +448,9 @@ class Plugin:
             clazzDoc = clazz.__doc__
 
             # 从类注释中获取类参数及参数说明，格式@argument: argument doc
-            keyValueSelect = []
             if clazzDoc != None:
                 for arg in clazzDoc.split("\n"):
+                    keyValueSelect = []
                     keyValue = arg.strip().split(":")
                     if len(keyValue) == 2 and keyValue[0].strip().startswith("@"):
                         if "|" in keyValue[1]:

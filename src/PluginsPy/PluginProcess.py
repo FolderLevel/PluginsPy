@@ -39,7 +39,7 @@ def getClazzWithRun(moduleString, sender, **args):
         print(e)
         traceback.print_exc()
 
-    sendString = None
+    sendString = ""
     if ret == None:
         sendString = ""
     elif isinstance(ret, list):

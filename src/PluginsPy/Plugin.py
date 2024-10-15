@@ -477,8 +477,7 @@ class Plugin:
             self.ui.PSInfoPlainTextEdit.setPlainText(self.procRetData)
 
     def processRetData(self, data):
-        if (len(data) > 0):
-            self.procRetData = data
+        self.procRetData = data
 
     def PSRunClick(self):
         print("PSRunClick")

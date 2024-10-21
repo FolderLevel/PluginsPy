@@ -8,7 +8,7 @@ class Config:
     PlotType = ["normal", "key", "keyLoop", "keyDiff", "3D"]
 
     def __init__(self):
-        self.configPath = 'output/visualLogConfig.txt'
+        self.configPath = 'output/PluginsPyConfig.txt'
         self.keyValues = self.loadConfig()
 
         if "version" not in self.keyValues.keys() or self.keyValues["version"] != Config.Version:

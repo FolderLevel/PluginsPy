@@ -28,6 +28,7 @@ class Plugin:
 
         # Plugins
         ui.PSPluginsComboBox.currentIndexChanged.connect(self.PSPluginsChanged)
+        ui.PSPluginsComboBox.setStyleSheet("QComboBox{combobox-popup:0;}")
         ui.PSRunPushButton.clicked.connect(self.PSRunClick)
         ui.PSRegexPushButton.clicked.connect(self.PSRegexClick)
         ui.PSVisualLogPushButton.clicked.connect(self.PSVisualLogClick)

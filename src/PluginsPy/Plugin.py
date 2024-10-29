@@ -105,7 +105,7 @@ class Plugin:
             args = self.visualLogData
             args["lineInfosFiles"] = self.lineInfosOfFiles
 
-            if self.currentThread != None and self.currentThread.is_alive():
+            if self.currentThread != None and self.currentThread.isRunning():
                 print("please close current matplotlib ui")
             else:
                 self.currentThread = PluginProcess(moduleString, args)

@@ -47,7 +47,12 @@ class VisualLogPlot:
         if len(visualLogData["lineInfosFiles"]) == 0:
             print("no data to plot")
             return
-        lineInfos = visualLogData["lineInfosFiles"][0]
+
+        # 当给出的是一组绘图数据，转换一下
+        if not isinstance(args["lineInfosFiles"][0][0], list):
+            lineInfos = args["lineInfosFiles"]
+        else:
+            lineInfos = visualLogData["lineInfosFiles"][0]
 
         dataIndex = visualLogData["dataIndex"]
         if len(dataIndex) != 3:
@@ -482,6 +487,10 @@ class VisualLogPlot:
 
         if len(args["lineInfosFiles"]) == 0:
             return
+
+        # 当给出的是一组绘图数据，转换一下
+        if not isinstance(args["lineInfosFiles"][0][0], list):
+            args["lineInfosFiles"] = [args["lineInfosFiles"]]
 
         for lineInfos in args["lineInfosFiles"]:
             if len(lineInfos) == 0:

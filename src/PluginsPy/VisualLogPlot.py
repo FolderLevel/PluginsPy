@@ -542,7 +542,7 @@ class VisualLogPlot:
                                             # 虚线
                                             ax.plot([s[x], s[x]], [pointCount, 0], linestyle = 'dotted')
                                     else:
-                                        ax.plot([s[x] for s in lineInfos], [s[i] for s in lineInfos])
+                                        ax.plot([s[x] for s in lineInfos], [s[i] for s in lineInfos], label="curve " + str(i))
                                         for s in lineInfos:
                                             ax.plot(s[x], s[i], 'o')
 
@@ -555,7 +555,7 @@ class VisualLogPlot:
                 for i in range(len(lineInfos[0])):
                     if i in visualLogData["dataIndex"]:
                         # ax.plot(range(len(lineInfos)), [s[i] for s in lineInfos], label = labels[i])
-                        ax.plot(range(len(lineInfos)), [s[i] for s in lineInfos])
+                        ax.plot(range(len(lineInfos)), [s[i] for s in lineInfos], label="curve " + str(i))
 
         ax.legend()
 

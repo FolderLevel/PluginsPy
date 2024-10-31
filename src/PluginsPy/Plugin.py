@@ -3,12 +3,13 @@
 import importlib
 import re
 import os
+import sys
 import inspect
 import subprocess
 
 from PluginsPy.MainUI import *
 from PluginsPy.Config import Config
-from PluginsPy.PluginProcess import PluginProcess
+from PluginsPy.PluginProcess import *
 from PluginsPy.PluginTemplate import PluginTemplate
 
 import VisualLog.LogParser as LogParser
@@ -108,8 +109,12 @@ class Plugin:
             if self.currentThread != None and self.currentThread.isRunning():
                 print("please close current matplotlib ui")
             else:
-                self.currentThread = PluginProcess(moduleString, args)
-                self.currentThread.start()
+                # Ubuntu下开进程绘图不显示
+                if sys.platform.startswith("linux"):
+                    self.ui.PSInfoPlainTextEdit.setPlainText(getClazzWithRun(moduleString, None, args))
+                else:
+                    self.currentThread = PluginProcess(moduleString, args)
+                    self.currentThread.start()
         except Exception as e:
             print(e)
 
@@ -487,9 +492,14 @@ class Plugin:
             print("please close current matplotlib ui")
         else:
             keyValues = self.getPluginKeyValues()
-            self.currentThread = PluginProcess(self.plugins[self.pluginsKeys[self.ui.PSPluginsComboBox.currentIndex()]], keyValues, self.processRetData)
-            self.currentThread.start()
-            self.currentThread.finished.connect(self.updateInfo)
+            moduleString = self.plugins[self.pluginsKeys[self.ui.PSPluginsComboBox.currentIndex()]]
+            # Ubuntu下开进程绘图不显示
+            if sys.platform.startswith("linux"):
+                self.ui.PSInfoPlainTextEdit.setPlainText(getClazzWithRun(moduleString, None, keyValues))
+            else:
+                self.currentThread = PluginProcess(moduleString, keyValues, self.processRetData)
+                self.currentThread.start()
+                self.currentThread.finished.connect(self.updateInfo)
 
     def getPluginKeyValues(self):
         keyValues = {}

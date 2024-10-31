@@ -6,7 +6,7 @@ import traceback
 import time
 from PyQt5.QtCore import QThread
 
-def getClazzWithRun(moduleString, sender, **args):
+def getClazzWithRun(moduleString, sender, args):
     ret = None
     module = None
 
@@ -51,7 +51,10 @@ def getClazzWithRun(moduleString, sender, **args):
     else:
         sendString = ""
 
-    sender.send(sendString)
+    if sender != None:
+        sender.send(sendString)
+    else:
+        return sendString
 
 # class PluginProcess(threading.Thread):
 class PluginProcess(QThread):
@@ -66,9 +69,11 @@ class PluginProcess(QThread):
     def run(self):
         print("PluginProcess running")
 
-        connSend, connRecv =  multiprocessing.Pipe()
-        p = multiprocessing.Process(target=getClazzWithRun, args=(self.moduleString, connSend,), kwargs=self.kwargs)
+        connRecv, connSend =  multiprocessing.Pipe()
+        p = multiprocessing.Process(target=getClazzWithRun, args=(self.moduleString, connSend, self.kwargs, ))
         p.start()
+
+        connSend.close()
 
         while p.is_alive():
             try:

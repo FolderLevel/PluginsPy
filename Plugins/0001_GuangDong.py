@@ -28,5 +28,7 @@ class GuangDong:
         print(kwargs)
         print("<<< out plugin start method")
 
+        return kwargs["name"]
+
 if __name__ == "__main__" :
     GuangDong({})

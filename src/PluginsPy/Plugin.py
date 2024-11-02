@@ -3,13 +3,13 @@
 import importlib
 import re
 import os
+import sys
 import inspect
 import subprocess
-import threading
 
 from PluginsPy.MainUI import *
 from PluginsPy.Config import Config
-from PluginsPy.PluginProcess import PluginProcess
+from PluginsPy.PluginProcess import *
 from PluginsPy.PluginTemplate import PluginTemplate
 
 import VisualLog.LogParser as LogParser
@@ -25,10 +25,11 @@ class Plugin:
         self.gridLayout       = ui.PSGridLayout
         self.MainWindow       = MainWindow
         self.config           = Config()
-        self.currentThread: threading.Thread = None
+        self.currentThread: QThread = None
 
         # Plugins
         ui.PSPluginsComboBox.currentIndexChanged.connect(self.PSPluginsChanged)
+        ui.PSPluginsComboBox.setStyleSheet("QComboBox{combobox-popup:0;}")
         ui.PSRunPushButton.clicked.connect(self.PSRunClick)
         ui.PSRegexPushButton.clicked.connect(self.PSRegexClick)
         ui.PSVisualLogPushButton.clicked.connect(self.PSVisualLogClick)
@@ -105,11 +106,15 @@ class Plugin:
             args = self.visualLogData
             args["lineInfosFiles"] = self.lineInfosOfFiles
 
-            if self.currentThread != None and self.currentThread.is_alive():
+            if self.currentThread != None and self.currentThread.isRunning():
                 print("please close current matplotlib ui")
             else:
-                self.currentThread = PluginProcess(moduleString, args)
-                self.currentThread.start()
+                # Ubuntu下开进程绘图不显示
+                if sys.platform.startswith("linux"):
+                    self.ui.PSInfoPlainTextEdit.setPlainText(getClazzWithRun(moduleString, None, args))
+                else:
+                    self.currentThread = PluginProcess(moduleString, args)
+                    self.currentThread.start()
         except Exception as e:
             print(e)
 
@@ -383,6 +388,21 @@ class Plugin:
                         button.clicked.connect(self.PSPluginsArgsClicked)
                         gridLayout.addWidget(button, i, 2, 1, 1)
                 else:
+                    # {
+                    #   'name': [
+                    #     'zengaz',                 --> default value
+                    #     ['zengjf', 'zengaz']      --> list value
+                    #   ],
+                    #   'id': '123456'
+                    # }
+                    #
+                    # * key
+                    # * value
+                    #   * str
+                    #     * default value
+                    #   * list
+                    #     * [0]: default value
+                    #     * [1]: list value
                     value = QComboBox()
                     comboxValue = (list)(keyValues[key][1])
                     value.addItems(comboxValue)
@@ -434,9 +454,9 @@ class Plugin:
             clazzDoc = clazz.__doc__
 
             # 从类注释中获取类参数及参数说明，格式@argument: argument doc
-            keyValueSelect = []
             if clazzDoc != None:
                 for arg in clazzDoc.split("\n"):
+                    keyValueSelect = []
                     keyValue = arg.strip().split(":")
                     if len(keyValue) == 2 and keyValue[0].strip().startswith("@"):
                         if "|" in keyValue[1]:
@@ -458,15 +478,28 @@ class Plugin:
 
         return keyValues
 
+    def updateInfo(self):
+        if (len(self.procRetData) > 0):
+            self.ui.PSInfoPlainTextEdit.setPlainText(self.procRetData)
+
+    def processRetData(self, data):
+        self.procRetData = data
+
     def PSRunClick(self):
         print("PSRunClick")
 
-        if self.currentThread != None and self.currentThread.is_alive():
+        if self.currentThread != None and self.currentThread.isRunning():
             print("please close current matplotlib ui")
         else:
             keyValues = self.getPluginKeyValues()
-            self.currentThread = PluginProcess(self.plugins[self.pluginsKeys[self.ui.PSPluginsComboBox.currentIndex()]], keyValues)
-            self.currentThread.start()
+            moduleString = self.plugins[self.pluginsKeys[self.ui.PSPluginsComboBox.currentIndex()]]
+            # Ubuntu下开进程绘图不显示
+            if sys.platform.startswith("linux"):
+                self.ui.PSInfoPlainTextEdit.setPlainText(getClazzWithRun(moduleString, None, keyValues))
+            else:
+                self.currentThread = PluginProcess(moduleString, keyValues, self.processRetData)
+                self.currentThread.start()
+                self.currentThread.finished.connect(self.updateInfo)
 
     def getPluginKeyValues(self):
         keyValues = {}

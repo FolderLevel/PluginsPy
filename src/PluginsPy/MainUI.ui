@@ -210,9 +210,9 @@
             </spacer>
            </item>
            <item>
-            <widget class="QPushButton" name="PSRegexPushButton">
+            <widget class="QPushButton" name="PSParseDataPushButton">
              <property name="text">
-              <string>Regex</string>
+              <string>Parse Data</string>
              </property>
             </widget>
            </item>

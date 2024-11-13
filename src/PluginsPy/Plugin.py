@@ -31,7 +31,7 @@ class Plugin:
         ui.PSPluginsComboBox.currentIndexChanged.connect(self.PSPluginsChanged)
         ui.PSPluginsComboBox.setStyleSheet("QComboBox{combobox-popup:0;}")
         ui.PSRunPushButton.clicked.connect(self.PSRunClick)
-        ui.PSRegexPushButton.clicked.connect(self.PSRegexClick)
+        ui.PSParseDataPushButton.clicked.connect(self.PSParseDataClick)
         ui.PSVisualLogPushButton.clicked.connect(self.PSVisualLogClick)
         ui.PSTempPushButton.clicked.connect(self.PSTempClick)
         ui.PSPlotTypeComboBox.addItems(Config.PlotType)
@@ -118,8 +118,8 @@ class Plugin:
         except Exception as e:
             print(e)
 
-    def PSRegexClick(self):
-        print("PSRegexClick")
+    def PSParseDataClick(self):
+        print("PSParseDataClick")
 
         self.lineInfosOfFiles = []
 

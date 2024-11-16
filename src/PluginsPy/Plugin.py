@@ -113,8 +113,9 @@ class Plugin:
                 if sys.platform.startswith("linux"):
                     self.ui.PSInfoPlainTextEdit.setPlainText(getClazzWithRun(moduleString, None, args))
                 else:
-                    self.currentThread = PluginProcess(moduleString, args)
+                    self.currentThread = PluginProcess(moduleString, args, self.processRetData)
                     self.currentThread.start()
+                    self.currentThread.finished.connect(self.updateInfo)
         except Exception as e:
             print(e)
 
@@ -149,10 +150,12 @@ class Plugin:
             except Exception as e:
                 print(e)
 
+        self.ui.PSInfoPlainTextEdit.setPlainText("")
         for lineInfos in self.lineInfosOfFiles:
             print("file data: ")
             for info in lineInfos:
                 print(info)
+                self.ui.PSInfoPlainTextEdit.appendPlainText(", ".join(str(v) for v in info))
 
     def PSRegexAddClick(self):
         print("PSRegexAddClick")

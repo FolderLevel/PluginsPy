@@ -426,15 +426,15 @@ class Plugin:
             self.config.setKeyValue("selectFileDir", os.getcwd())
             self.config.saveConfig()
 
-        fileName, fileType = QFileDialog.getOpenFileName(None, "select file", self.config.getValue("selectFileDir"), "All Files(*);;Text Files(*.txt)")
-        if (len(fileName) > 0):
-            print(fileName)
+        fileNames, fileType = QFileDialog.getOpenFileNames(None, "select file", self.config.getValue("selectFileDir"), "All Files(*);;Text Files(*.txt)")
+        if (len(fileNames) > 0):
+            print(fileNames)
             print(fileType)
 
             edit: QLineEdit = self.ui.PSGridLayout.itemAtPosition(row, col - 1).widget()
-            edit.setText(fileName)
+            edit.setText(";".join(fileNames))
 
-            self.config.setKeyValue("selectFileDir", os.path.dirname(fileName))
+            self.config.setKeyValue("selectFileDir", os.path.dirname(fileNames[0]))
 
     def findWidgetPosition(self, gridLayout):
         print("row, col: " + str(gridLayout.rowCount()) + ", " + str(gridLayout.columnCount()))

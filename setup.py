@@ -4,7 +4,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="PluginsPy",
+    name="pluginspy",
     version="0.2.16",
     author="zengjf",
     author_email="zengjf42@163.com",

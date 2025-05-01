@@ -1,4 +1,4 @@
-app := PluginsPy
+app := pluginspy
 DOCSLINES     = $(strip $(shell find src/PluginsPy -iname "*.py" | xargs cat | wc -l | tail -n 1 | awk -F " " '{print $$1}') | sed ':a;s/\([0-9]\{1,\}\)\([0-9]\{3\}\)/\1,\2/g;ta')
 
 all:

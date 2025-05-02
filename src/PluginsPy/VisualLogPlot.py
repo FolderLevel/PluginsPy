@@ -579,12 +579,19 @@ class VisualLogPlot:
     @classmethod
     def show(clazz, kwargs):
         '''
+        # args
+
+        kwargs["filesLineInfos"]: 文件数组后获取的数据[[[file 1 line 1], [file 1 line 2], [...]], [[file 2 line 1], [file 2 line 2], [...]], [...]]
         kwargs["plotType"]: "normal", "key", "keyLoop", "keyDiff", "3D"
+        kwargs["xAxis"]: 绘图X轴数组
+        kwargs["dataIndex"]: 绘图Y轴数组
+
+        # plotType
 
         * normal: 默认绘图方式
-        * key: 根据key不同绘图，目前只支持两条曲线绘制对比
-        * keyLoop: 对Key循环绘图，目前只支持单文件数据循环绘制
-        * keyDiff: 对key进行diff后绘图，目前只支持两条曲线绘制对比
+        * key: 依据key作为X轴，相当于以key的顺序作为X轴，key出现的时间作为Y轴绘图，目前只支持两条曲线绘制对比
+        * keyLoop: 依据key作为X轴，相当于以key的顺序作为X轴，key出现的时间作为Y轴绘图，目前只支持单文件数据循环绘制
+        * keyDiff: 依据key作为X轴，相当于以key的顺序作为X轴，key出现的时间作为Y轴绘图，对key进行diff后绘图，目前只支持两条曲线绘制对比
         * 3D: 3D绘图方式
         '''
 

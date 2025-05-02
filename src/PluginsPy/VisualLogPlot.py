@@ -559,10 +559,28 @@ class VisualLogPlot:
 
         ax.legend()
 
-    def parseData(filePath, regex):
+    @classmethod
+    def parseData(clazz, filePath, regex):
         print("parseData")
 
         return LogParser.logFileParser(
             filePath,
             regex
         )
+
+    @classmethod
+    def show(clazz, kwargs):
+        # 清理matplotlib相关绘图，防止出现未知异常报错
+        plot.close()
+        if kwargs["plotType"] == "normal":
+            MatplotlibZoom.Show(callback=VisualLogPlot.defaultShowCallback, rows = 1, cols = 1, args=kwargs)
+        elif kwargs["plotType"] == "key":
+            MatplotlibZoom.Show(callback=VisualLogPlot.defaultKeyShowCallback, rows = 1, cols = 1, args=kwargs)
+        elif kwargs["plotType"] == "keyLoop":
+            MatplotlibZoom.Show(callback=VisualLogPlot.defaultKeyLoopShowCallback, rows = 1, cols = 1, args=kwargs)
+        elif kwargs["plotType"] == "keyDiff":
+            MatplotlibZoom.Show(callback=VisualLogPlot.defaultKeyDiffShowCallback, rows = 1, cols = 1, args=kwargs)
+        elif kwargs["plotType"] == "3D":
+            MatplotlibZoom.Show(callback=VisualLogPlot.default3DShowCallback, rows = 1, cols = 1, d3=True, args=kwargs)
+        else:
+            print("unsupport plot type")

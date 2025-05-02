@@ -11,9 +11,9 @@ setuptools.setup(
     description="Plugins Framework",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/ZengjfOS/PluginsPy",
+    url="https://github.com/FolderLevel/PluginsPy",
     project_urls={
-        "Bug Tracker": "https://github.com/ZengjfOS/PluginsPy/issues",
+        "Bug Tracker": "https://github.com/FolderLevel/PluginsPy/issues",
     },
     classifiers=[
         "Programming Language :: Python :: 3",

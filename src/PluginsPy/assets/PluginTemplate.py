@@ -11,9 +11,6 @@ import datetime
 
 from PluginsPy.VisualLogPlot import VisualLogPlot
 
-import VisualLog.LogParser as LogParser
-import VisualLog.MatplotlibZoom as MatplotlibZoom
-
 import matplotlib.pyplot as plot
 from matplotlib.figure import Figure
 from matplotlib.axes import Axes
@@ -33,24 +30,13 @@ class ${className}:
 
         parseFilenames = [${parseFilenames}]
         regex = [${regex}]
-        kwargs["lineInfosFiles"], filenames = LogParser.logFileParser(
+        kwargs["lineInfosFiles"], filenames = VisualLogPlot.parseData(
             parseFilenames,
             regex,
             )
 
-        plotType             = "${plotType}"
+        kwargs["plotType"]  = "${plotType}"
         kwargs["xAxis"]      = [${xAxis}]
         kwargs["dataIndex"]  = [${dataIndex}]
 
-        if plotType == "normal":
-            MatplotlibZoom.Show(callback=VisualLogPlot.defaultShowCallback, rows = 1, cols = 1, args=kwargs)
-        elif plotType == "key":
-            MatplotlibZoom.Show(callback=VisualLogPlot.defaultKeyShowCallback, rows = 1, cols = 1, args=kwargs)
-        elif plotType == "keyLoop":
-            MatplotlibZoom.Show(callback=VisualLogPlot.defaultKeyLoopShowCallback, rows = 1, cols = 1, args=kwargs)
-        elif plotType == "keyDiff":
-            MatplotlibZoom.Show(callback=VisualLogPlot.defaultKeyDiffShowCallback, rows = 1, cols = 1, args=kwargs)
-        elif plotType == "3D":
-            MatplotlibZoom.Show(callback=VisualLogPlot.default3DShowCallback, rows = 1, cols = 1, d3=True, args=kwargs)
-        else:
-            print("unsupport plot type")
+        VisualLogPlot.show(kwargs)

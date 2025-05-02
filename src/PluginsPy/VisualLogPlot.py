@@ -39,20 +39,24 @@ class VisualLogPlot:
 
     @classmethod
     def default3DShowCallback(clz, fig: Figure, index, args):
+        '''
+        3D绘图
+        '''
+
         if len(args) <= 0:
             return
 
         visualLogData = args
 
-        if len(visualLogData["lineInfosFiles"]) == 0:
+        if len(visualLogData["filesLineInfos"]) == 0:
             print("no data to plot")
             return
 
         # 当给出的是一组绘图数据，转换一下
-        if not isinstance(args["lineInfosFiles"][0][0], list):
-            lineInfos = args["lineInfosFiles"]
+        if not isinstance(args["filesLineInfos"][0][0], list):
+            lineInfos = args["filesLineInfos"]
         else:
-            lineInfos = visualLogData["lineInfosFiles"][0]
+            lineInfos = visualLogData["filesLineInfos"][0]
 
         dataIndex = visualLogData["dataIndex"]
         if len(dataIndex) != 3:
@@ -104,7 +108,7 @@ class VisualLogPlot:
 
         visualLogData = args
 
-        if len(args["lineInfosFiles"]) != 1:
+        if len(args["filesLineInfos"]) != 1:
             print("just deal with first data list")
 
         if len(visualLogData["xAxis"]) == 0 or len(visualLogData["dataIndex"]) == 0:
@@ -119,9 +123,9 @@ class VisualLogPlot:
 
         print(keyIndex)
         print(valueIndex)
-        print(args["lineInfosFiles"])
+        print(args["filesLineInfos"])
         # 迭代文件
-        lineInfos = visualLogData["lineInfosFiles"][0]
+        lineInfos = visualLogData["filesLineInfos"][0]
         if len(lineInfos) == 0:
             print("data length is 0")
             return
@@ -140,7 +144,7 @@ class VisualLogPlot:
         curveIndex = 1
         plotY = None
         plotYs = []
-        lineInfos = visualLogData["lineInfosFiles"][0]
+        lineInfos = visualLogData["filesLineInfos"][0]
 
         # 单个数组，每组key对应的值取第一个，防止重复
         plotY = []
@@ -199,7 +203,7 @@ class VisualLogPlot:
 
         visualLogData = args
 
-        if len(args["lineInfosFiles"]) == 0:
+        if len(args["filesLineInfos"]) == 0:
             return
 
         if len(visualLogData["xAxis"]) == 0 or len(visualLogData["dataIndex"]) == 0:
@@ -215,9 +219,9 @@ class VisualLogPlot:
 
         print(keyIndex)
         print(valueIndex)
-        print(args["lineInfosFiles"])
+        print(args["filesLineInfos"])
         # 迭代文件
-        for lineInfos in args["lineInfosFiles"]:
+        for lineInfos in args["filesLineInfos"]:
             if len(lineInfos) == 0:
                 continue
 
@@ -253,7 +257,7 @@ class VisualLogPlot:
         curveIndex = 1
         plotY = None
         plotYs = []
-        for lineInfos in args["lineInfosFiles"]:
+        for lineInfos in args["filesLineInfos"]:
             if len(lineInfos) == 0:
                 continue
 
@@ -361,7 +365,7 @@ class VisualLogPlot:
 
         visualLogData = args
 
-        if len(args["lineInfosFiles"]) == 0:
+        if len(args["filesLineInfos"]) == 0:
             return
 
         if len(visualLogData["xAxis"]) == 0 or len(visualLogData["dataIndex"]) == 0:
@@ -376,9 +380,9 @@ class VisualLogPlot:
 
         print(keyIndex)
         print(valueIndex)
-        print(args["lineInfosFiles"])
+        print(args["filesLineInfos"])
         # 迭代文件
-        for lineInfos in args["lineInfosFiles"]:
+        for lineInfos in args["filesLineInfos"]:
             if len(lineInfos) == 0:
                 continue
 
@@ -395,7 +399,7 @@ class VisualLogPlot:
         curveIndex = 1
         plotY = None
         plotYs = []
-        for lineInfos in args["lineInfosFiles"]:
+        for lineInfos in args["filesLineInfos"]:
             if len(lineInfos) == 0:
                 continue
 
@@ -471,7 +475,7 @@ class VisualLogPlot:
         {
             'xAxis': [0],               # x轴，支持int/float/datetime
             'dataIndex': [1],           # y轴，支持init/float/str
-            'lineInfosFiles': [
+            'filesLineInfos': [
                 [file data],
                 [file data]
             ]
@@ -485,14 +489,14 @@ class VisualLogPlot:
 
         visualLogData = args
 
-        if len(args["lineInfosFiles"]) == 0:
+        if len(args["filesLineInfos"]) == 0:
             return
 
         # 当给出的是一组绘图数据，转换一下
-        if not isinstance(args["lineInfosFiles"][0][0], list):
-            args["lineInfosFiles"] = [args["lineInfosFiles"]]
+        if not isinstance(args["filesLineInfos"][0][0], list):
+            args["filesLineInfos"] = [args["filesLineInfos"]]
 
-        for lineInfos in args["lineInfosFiles"]:
+        for lineInfos in args["filesLineInfos"]:
             if len(lineInfos) == 0:
                 continue
 
@@ -561,6 +565,10 @@ class VisualLogPlot:
 
     @classmethod
     def parseData(clazz, filePath, regex):
+        '''
+        根据正则表达式解析文件，返回解析后的数据
+        '''
+
         print("parseData")
 
         return LogParser.logFileParser(
@@ -570,8 +578,19 @@ class VisualLogPlot:
 
     @classmethod
     def show(clazz, kwargs):
+        '''
+        kwargs["plotType"]: "normal", "key", "keyLoop", "keyDiff", "3D"
+
+        * normal: 默认绘图方式
+        * key: 根据key不同绘图，目前只支持两条曲线绘制对比
+        * keyLoop: 对Key循环绘图，目前只支持单文件数据循环绘制
+        * keyDiff: 对key进行diff后绘图，目前只支持两条曲线绘制对比
+        * 3D: 3D绘图方式
+        '''
+
         # 清理matplotlib相关绘图，防止出现未知异常报错
         plot.close()
+
         if kwargs["plotType"] == "normal":
             MatplotlibZoom.Show(callback=VisualLogPlot.defaultShowCallback, rows = 1, cols = 1, args=kwargs)
         elif kwargs["plotType"] == "key":

@@ -3,7 +3,11 @@ DOCSLINES     = $(strip $(shell find src/PluginsPy -iname "*.py" | xargs cat | w
 
 all:
 	pip3 uninstall -y $(app)
+
 	rm -rf dist/*
+	rm -rf src/PluginsPy/template/output
+	find * -iname __pycache__ | xargs rm -rf
+	
 	python3 setup.py sdist bdist_wheel
 	pip3 install dist/$(app)-*-py3-none-any.whl
 

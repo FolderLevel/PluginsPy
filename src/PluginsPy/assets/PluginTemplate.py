@@ -30,7 +30,7 @@ class ${className}:
 
         parseFilenames = [${parseFilenames}]
         regex = [${regex}]
-        kwargs["lineInfosFiles"], filenames = VisualLogPlot.parseData(
+        kwargs["filesLineInfos"], filenames = VisualLogPlot.parseData(
             parseFilenames,
             regex,
             )

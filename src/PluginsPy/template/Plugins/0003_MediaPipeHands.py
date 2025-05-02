@@ -18,7 +18,7 @@ from matplotlib.axes import Axes
 class MediaPipeHands:
 
     """
-    @data(input/hands.txt): None
+    @data(input/0003_hands.txt): None
     """
 
     def __init__(self, kwargs):

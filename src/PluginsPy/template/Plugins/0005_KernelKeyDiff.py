@@ -18,8 +18,8 @@ from matplotlib.axes import Axes
 class KernelKeyDiff:
 
     """
-    @first(input/kernel_1_keydiff.txt): None
-    @second(input/kernel_2_keydiff.txt): None
+    @first(input/0005_kernel_1_keydiff.txt): None
+    @second(input/0005_kernel_2_keydiff.txt): None
     """
 
     def __init__(self, kwargs):

@@ -104,7 +104,7 @@ class Plugin:
         try:
             moduleString = "VisualLogPlot"
             args = self.visualLogData
-            args["lineInfosFiles"] = self.lineInfosOfFiles
+            args["filesLineInfos"] = self.lineInfosOfFiles
 
             if self.currentThread != None and self.currentThread.isRunning():
                 print("please close current matplotlib ui")

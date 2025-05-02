@@ -37,7 +37,7 @@ class KernelKeyLoop:
             '(\d*\.\d*)\s+:.*(vold:fbeEnable:START)',
             '(\d*\.\d*)\s+:.*(INIT:post-fs-data)'
             ]
-        kwargs["lineInfosFiles"], filenames = VisualLogPlot.parseData(
+        kwargs["filesLineInfos"], filenames = VisualLogPlot.parseData(
             parseFilenames,
             regex,
             )

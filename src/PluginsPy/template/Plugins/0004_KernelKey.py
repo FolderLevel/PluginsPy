@@ -3,7 +3,7 @@
 
 """
 Author: zengjf
-Date: 2024-10-01 11:15:38
+Date: 2024-10-01 11:17:22
 License: MIT License
 """
 
@@ -15,16 +15,16 @@ import matplotlib.pyplot as plot
 from matplotlib.figure import Figure
 from matplotlib.axes import Axes
 
-class KernelKeyDiff:
+class KernelKey:
 
     """
-    @first(input/kernel_1_keydiff.txt): None
-    @second(input/kernel_2_keydiff.txt): None
+    @first(input/0004_kernel_1.txt): None
+    @second(input/0004_kernel_2.txt): None
     """
 
     def __init__(self, kwargs):
 
-        print("KernelKeyDiff args:")
+        print("Kernel args:")
         print(kwargs)
 
         first = kwargs["first"]
@@ -42,7 +42,7 @@ class KernelKeyDiff:
             regex,
             )
 
-        kwargs["plotType"]   = "keyDiff"
+        kwargs["plotType"]   = "key"
         kwargs["xAxis"]      = [1]
         kwargs["dataIndex"]  = [0]
 

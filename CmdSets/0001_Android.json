@@ -1,0 +1,19 @@
+{
+    "title": "Android",
+    "version": "0.0.0",
+    "cmdsets": [
+        {
+            "name": "root",
+            "cmds": [
+                {
+                    "name": "remount",
+                    "cmd": "adb remount"
+                },
+                {
+                    "name": "root",
+                    "cmd": "adb root"
+                }
+            ]
+        }
+    ]
+}

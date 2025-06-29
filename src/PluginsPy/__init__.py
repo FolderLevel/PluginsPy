@@ -17,6 +17,8 @@ from PyQt5.QtWidgets import *
 
 from PluginsPy.MainUI import *
 from PluginsPy.Plugin import Plugin
+from PluginsPy.CmdSets import CmdSets
+from PluginsPy.Perf import Perf
 
 def getFiles(path) :
     for (dirpath, dirnames, filenames) in walk(path) :
@@ -539,6 +541,8 @@ def PluginsPyQT5() :
     MainWindow.setFixedSize(size.width(), size.height())
 
     plugin        = Plugin(ui, MainWindow)
+    cmdSets       = CmdSets(ui, MainWindow)
+    perf          = Perf(ui, MainWindow)
   
     MainWindow.show()              # 执行QMainWindow的show()方法，显示这个QMainWindow
     sys.exit(app.exec_())          # 使用exit()或者点击关闭按钮退出QApplicat

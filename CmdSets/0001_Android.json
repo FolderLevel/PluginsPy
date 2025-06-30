@@ -14,6 +14,15 @@
                     "cmd": "adb root"
                 }
             ]
+        },
+        {
+            "name": "device",
+            "cmds": [
+                {
+                    "name": "device",
+                    "cmd": "adb devices"
+                }
+            ]
         }
     ]
 }

@@ -16,6 +16,8 @@ class Perf:
         self.gridLayout       = ui.PSGridLayout
         self.MainWindow       = MainWindow
 
+        self.adbConnected     = False
+
         self.ui.PerfCapturePushButton.clicked.connect(self.captureClicked)
         self.ui.PerfSystemTypeComboBox.addItems(["android"])
         self.ui.PerfTypeComboBox.addItems(["atrace", "perfetto"])
@@ -24,6 +26,7 @@ class Perf:
         detectDevice = self.Shell("adb devices".split(" ")).split("\n")
         if (len(detectDevice) > 1):
             print("device connected")
+            self.adbConnected     = True
 
             atraceList = []
             for item in self.Shell("adb shell atrace --list_categories".split(" ")).split("\n"):
@@ -72,3 +75,17 @@ class Perf:
                         itemStates[item.widget().text()] = item.widget().isChecked()
 
         print(itemStates)
+
+        if len(itemStates.keys()) > 0:
+            if self.ui.PerfSystemTypeComboBox.currentText() == "android":
+                if (self.ui.PerfTypeComboBox.currentText() == "atrace" or self.ui.PerfTypeComboBox.currentText() == "perfetto"):
+                    cmd = "adb shell perfetto -o /data/misc/perfetto-traces/trace_file.perfetto-trace -d -t " \
+                        + self.ui.PerfTimeoutLineEdit.text().strip() + "s " + " ".join(itemStates.keys())
+                    
+                    print(cmd)
+
+                    pid = self.Shell(cmd.split(" "))
+                    print("pid: " + str(pid))
+
+                    process = self.Shell(["adb", "shell", "ps -A | grep perfetto"])
+                    print(process)

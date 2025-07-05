@@ -20,5 +20,8 @@ clean:
 ui:
 	python3 -m PyQt5.uic.pyuic src/PluginsPy/MainUI.ui -o src/PluginsPy/MainUI.py
 
+qt:
+	PYTHONPATH=`pwd`/src python3 tests/test_PluginsPyQT5.py
+
 count:
 	@echo docs lines: $(DOCSLINES)

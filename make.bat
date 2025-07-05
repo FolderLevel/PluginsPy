@@ -9,12 +9,14 @@ if "%1" == "ui"       goto ui
 if "%1" == "designer" goto designer
 if "%1" == "all"      goto all
 if "%1" == "deps"     goto deps
+if "%1" == "qt"       goto qt
 
 echo.
 echo.usage:
 echo.	make
 echo.	make all
 echo.	make ui
+echo.	make qt
 echo.	make designer
 echo.
 
@@ -37,6 +39,11 @@ goto end
 
 :deps
 pip3 install -r requirements.txt
+goto end
+
+:qt
+set PYTHONPATH=%cd%\src
+python3 tests/test_PluginsPyQT5.py
 goto end
 
 :end

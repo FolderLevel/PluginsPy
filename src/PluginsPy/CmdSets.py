@@ -25,6 +25,7 @@ class CmdSets:
         ui.CSSelectByCmdsetComboBox.currentIndexChanged.connect(self.SelectByCmdsetChanged)
 
         self.ui.CSSelectByFileNameComboBox.addItems(self.fileNames)
+        self.ui.CSRunAllPushButton.clicked.connect(self.cmdRunAllClicked)
 
     def loadConfig(self):
         self.cmdSets = []
@@ -98,3 +99,17 @@ class CmdSets:
         out.wait()
         data = out.stdout.read()
         print(data.decode('utf-8').strip())
+
+    def cmdRunAllClicked(self):
+        print("cmdRunAllClicked")
+        for row in range(len(self.cmdset["cmds"])):
+            cmd: str = self.cmdset["cmds"][row]["cmd"]
+            print("cmd: " + cmd)
+
+            out = subprocess.Popen(cmd.split(" "), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            out.wait()
+            data = out.stdout.read()
+            print(data.decode('utf-8').strip())
+
+            if out.returncode != 0:
+                break

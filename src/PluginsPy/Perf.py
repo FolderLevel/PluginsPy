@@ -19,6 +19,7 @@ class Perf:
         self.adbConnected     = False
 
         self.ui.PerfCapturePushButton.clicked.connect(self.captureClicked)
+        self.ui.PerfPullPushButton.clicked.connect(self.pullClicked)
         self.ui.PerfSystemTypeComboBox.addItems(["android"])
         self.ui.PerfTypeComboBox.addItems(["atrace", "perfetto"])
         self.ui.PerfTimeoutLineEdit.setText("30")
@@ -89,3 +90,13 @@ class Perf:
 
                     process = self.Shell(["adb", "shell", "ps -A | grep perfetto"])
                     print(process)
+
+    def pullClicked(self):
+        print("pullClicked")
+
+        if self.adbConnected:
+            cmd = "adb pull /data/misc/perfetto-traces/trace_file.perfetto-trace " + "output/"
+            print(cmd)
+
+            ret = self.Shell(cmd.split(" "))
+            print(ret)
